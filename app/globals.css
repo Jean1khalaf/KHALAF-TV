@@ -88,3 +88,17 @@ body{background:radial-gradient(ellipse at 70% -15%,#28214a 0,transparent 42%),#
  .video-wrap{aspect-ratio:16/9;min-height:190px}.source-frame-wrap{height:clamp(250px,65vw,480px)}.player-meta{align-items:flex-start}.favorite-button{font-size:10px;padding:8px}
 }
 @media(max-width:420px){.welcome-row{display:block}.channel-count{display:flex;align-items:center;gap:8px;width:max-content;margin-top:15px}.channel-count strong{font-size:16px}.channel-grid,.loading-grid{grid-template-columns:1fr}.channel-main{min-height:68px;padding:10px 34px 10px 10px}.channel-logo{width:40px;height:40px}.channel-info strong{font-size:12px}.channel-info small{font-size:10px}.filter-pill{display:none}.featured-channel-grid{grid-template-columns:1fr}}
+
+/* Full-screen in-site player opened when a viewer selects a channel. */
+.player-card-fullscreen{position:fixed!important;inset:0!important;z-index:100!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important;margin:0!important;overflow:auto!important;background:#05070b!important;box-shadow:none!important;display:flex!important;flex-direction:column!important}
+.player-card-fullscreen .player-topline{flex:0 0 48px;padding:0 16px;background:#0b1019;border-bottom:1px solid #202635}
+.player-topline-actions{display:flex;align-items:center;gap:10px}
+.fullscreen-close{display:flex;align-items:center;gap:7px;background:#1b2230;border:1px solid #394256;color:#eef1f8;border-radius:9px;padding:8px 11px;font-size:12px}
+.player-card-fullscreen .video-wrap{flex:1;min-height:0;height:auto;max-height:none;aspect-ratio:auto}
+.player-card-fullscreen .source-frame-wrap{height:auto;flex:1;min-height:0}
+.player-card-fullscreen .special-player{display:flex;flex:1;min-height:0;flex-direction:column}
+.player-card-fullscreen .source-frame-wrap{flex:1;min-height:0;height:auto}
+.player-card-fullscreen .special-player-heading{flex:0 0 auto}
+.player-card-fullscreen .player-meta{flex:0 0 auto;background:#0b1019}
+.player-card-fullscreen .video-caption{bottom:16px}
+@media(max-width:760px){.player-card-fullscreen .player-topline{flex-basis:48px}.player-card-fullscreen .special-player-heading{padding:8px 10px}.player-card-fullscreen .embed-notice{max-height:76px;overflow:auto}.fullscreen-close{padding:7px 9px;font-size:11px}.player-card-fullscreen .player-meta{padding:10px}}

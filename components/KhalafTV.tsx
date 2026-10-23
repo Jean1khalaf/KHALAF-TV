@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2 } from "lucide-react";
+import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2 } from "lucide-react";
 
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Special = { name: string; url: string; note: string };
@@ -28,7 +28,7 @@ const canonicalSpecial = (name: string) => {
 const COPY = {
   en: {
     discover: "DISCOVER", all: "All channels", favorites: "My favorites", lebanese: "LEBANESE CHANNELS",
-    categories: "CATEGORIES", live: "LIVE TV", tagline: "YOUR WORLD. LIVE.", free: "Channel directory",
+    categories: "COUNTRIES", live: "LIVE TV", tagline: "YOUR WORLD. LIVE.", free: "Channel directory",
     eyebrow: "LIVE STREAMING", titleA: "Find your", titleB: "channel.", intro: "Your favorite live TV, all in one place.",
     listed: "channels listed", now: "NOW PLAYING", liveBadge: "LIVE", source: "Open source",
     sourceTitle: "Source player", sourceHelp: "Why doesn't it fit?", hideInfo: "Hide info",
@@ -43,7 +43,7 @@ const COPY = {
   },
   ar: {
     discover: "استكشف", all: "كل القنوات", favorites: "المفضلة", lebanese: "القنوات اللبنانية",
-    categories: "التصنيفات", live: "بث تلفزيوني مباشر", tagline: "عالمك. مباشرةً.", free: "دليل القنوات",
+    categories: "البلدان", live: "بث تلفزيوني مباشر", tagline: "عالمك. مباشرةً.", free: "دليل القنوات",
     eyebrow: "بث مباشر", titleA: "اعثر على", titleB: "قناتك.", intro: "قنواتك المباشرة المفضلة في مكان واحد.",
     listed: "قناة", now: "يُعرض الآن", liveBadge: "مباشر", source: "فتح المصدر",
     sourceTitle: "مشغل المصدر", sourceHelp: "لماذا لا يظهر بشكل مناسب؟", hideInfo: "إخفاء المعلومات",
@@ -63,7 +63,8 @@ export default function KhalafTV() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All channels");
+  const [category, setCategory] = useState("All countries");
+  const [fullScreenPlayer, setFullScreenPlayer] = useState(false);
   const [selected, setSelected] = useState<Channel | Special | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
@@ -117,20 +118,29 @@ export default function KhalafTV() {
     return () => { hls?.destroy(); };
   }, [selected]);
 
-  const groups = useMemo(() => ["All channels", ...Array.from(new Set(channels.map(c => c.group || "Other"))).sort()], [channels]);
+  const countryName = (value?: string, channelName = "") => {
+    const raw = (value || "").split(/[;,]/)[0].trim();
+    const codeMap: Record<string, string> = { CN: "China", CHN: "China", LB: "Lebanon", LBN: "Lebanon", FR: "France", FRA: "France", US: "United States", USA: "United States", GB: "United Kingdom", GBR: "United Kingdom", CA: "Canada", CAN: "Canada", AE: "United Arab Emirates", UAE: "United Arab Emirates", SA: "Saudi Arabia", KSA: "Saudi Arabia", EG: "Egypt", EGY: "Egypt", IQ: "Iraq", IR: "Iran", SY: "Syria", JO: "Jordan", TR: "Turkey", DE: "Germany", IT: "Italy", ES: "Spain", RU: "Russia", IN: "India", PK: "Pakistan", JP: "Japan", KR: "South Korea", AU: "Australia", BR: "Brazil", MX: "Mexico" };
+    if (raw) return codeMap[raw.toUpperCase()] || raw;
+    const n = `${channelName} ${value || ""}`.toLowerCase();
+    const hints: [RegExp, string][] = [[/china|chinese|cctv/, "China"], [/lebanon|lebanese|mtv lebanon|al jadeed|lbc/, "Lebanon"], [/france|french|fr\s*24/, "France"], [/united kingdom|british|bbc|uk/, "United Kingdom"], [/united states|american|usa|us/, "United States"], [/canada|canadian|cbc/, "Canada"], [/turkey|turkish|turkiye/, "Turkey"], [/egypt|egyptian/, "Egypt"], [/iraq|iraqi/, "Iraq"], [/syria|syrian/, "Syria"], [/saudi|ksa/, "Saudi Arabia"], [/india|indian/, "India"], [/pakistan|pakistani/, "Pakistan"], [/japan|japanese/, "Japan"], [/south korea|korean/, "South Korea"], [/russia|russian/, "Russia"], [/germany|german/, "Germany"], [/italy|italian/, "Italy"], [/spain|spanish/, "Spain"], [/australia|australian/, "Australia"]];
+    return hints.find(([re]) => re.test(n))?.[1] || "Other / Unknown";
+  };
+  const countries = useMemo(() => ["All countries", ...Array.from(new Set([...channels.map(c => countryName(c.country, c.name)), "Lebanon", "Saudi Arabia"])).sort()], [channels]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const regular = channels.filter(c => {
       // Hide playlist duplicates for channels represented by the curated special cards.
       if (canonicalSpecial(c.name)) return false;
       const matchesQuery = `${c.name} ${c.group || ""} ${c.country || ""}`.toLowerCase().includes(q);
-      const matchesGroup = category === "All channels" || (c.group || "Other") === category;
+      const matchesGroup = category === "All countries" || countryName(c.country, c.name) === category;
       const matchesFav = !onlyFavorites || favorites.includes(c.name);
       return matchesQuery && matchesGroup && matchesFav;
     });
     const special = SPECIALS.filter(c => {
       const matchesQuery = `${c.name} ${c.note} Lebanon`.toLowerCase().includes(q);
-      const matchesGroup = category === "All channels" || category === "News" || category === "Lebanese TV";
+      const specialCountry = c.name === "Al Hadath" ? "Saudi Arabia" : "Lebanon";
+      const matchesGroup = category === "All countries" || specialCountry === category;
       const matchesFav = !onlyFavorites || favorites.includes(c.name);
       return matchesQuery && matchesGroup && matchesFav;
     });
@@ -167,27 +177,15 @@ export default function KhalafTV() {
           <div className="sidebar-heading">{t.discover}</div>
           <button className={`nav-item ${!onlyFavorites ? "active" : ""}`} onClick={() => {setOnlyFavorites(false); setMobileMenu(false);}}><Globe2 size={18}/> {t.all} <span>{channels.length || "—"}</span></button>
           <button className={`nav-item ${onlyFavorites ? "active" : ""}`} onClick={() => {setOnlyFavorites(true); setMobileMenu(false);}}><Heart size={18}/> {t.favorites}</button>
-          <div className="sidebar-heading channel-heading">{t.lebanese}</div>
-          {SPECIALS.filter(s => s.name !== "Al Hadath").map(s => <button key={s.name} className={`special-nav ${selected?.name === s.name ? "selected" : ""}`} onClick={() => {setSelected(s); setShowSpecialNotice(true); setMobileMenu(false);}}><span className="channel-dot">{s.name.startsWith("MTV") ? "M" : s.name.startsWith("LBC") ? "L" : "J"}</span><span>{s.name}<small>Lebanon</small></span><Play size={14}/></button>)}
           <div className="sidebar-heading">{t.categories}</div>
-          <div className="category-list">{groups.slice(1, 13).map(g => <button key={g} className={`category-item ${category === g ? "chosen" : ""}`} onClick={() => {setCategory(category === g ? "All channels" : g); setOnlyFavorites(false); setMobileMenu(false);}}>{g}</button>)}</div>
+          <div className="category-list">{countries.map(country => <button key={country} className={`category-item ${category === country ? "chosen" : ""}`} onClick={() => {setCategory(country); setOnlyFavorites(false); setMobileMenu(false);}}>{country}</button>)}</div>
           <div className="sidebar-footer"><span className="status-dot"/> {t.directory} <small>{t.directoryNote}</small></div>
         </aside>
 
         <section className="main-content">
           <div className="welcome-row"><div><div className="eyebrow"><Radio size={14}/> {t.eyebrow}</div><h1>{t.titleA} <span>{t.titleB}</span></h1><p>{t.intro}</p></div><div className="channel-count"><strong>{channels.length.toLocaleString()}</strong><span>{t.listed}</span></div></div>
-          <section className="lebanese-featured" aria-label={t.lebanese}>
-            <div className="section-title-row featured-title"><div><h2>{t.lebanese}</h2><p>{language === "ar" ? "اختر قناة لبنانية للمشاهدة" : "Quick access to your favorite Lebanese channels"}</p></div></div>
-            <div className="featured-channel-grid">
-              {SPECIALS.filter(s => s.name !== "Al Hadath").map((s, index) => <button key={s.name} className={`featured-channel ${selected?.name === s.name ? "active" : ""}`} onClick={() => { setSelected(s); setShowSpecialNotice(true); }}>
-                <span className={`featured-logo featured-logo-${index}`}>{s.name.startsWith("MTV") ? "M" : s.name.startsWith("LBC") ? "L" : "J"}</span>
-                <span><strong>{s.name}</strong><small>{language === "ar" ? "لبنان · بث مباشر" : "Lebanon · Live TV"}</small></span>
-                <Play size={16} className="featured-play"/>
-              </button>)}
-            </div>
-          </section>
-          <div className="player-card">
-            <div className="player-topline"><span><i className="red-dot"/> NOW PLAYING</span><span className="quality-tag">LIVE</span></div>
+          <div className={`player-card ${fullScreenPlayer ? "player-card-fullscreen" : ""}`}>
+            <div className="player-topline"><span><i className="red-dot"/> NOW PLAYING</span><div className="player-topline-actions"><span className="quality-tag">LIVE</span>{fullScreenPlayer && <button className="fullscreen-close" onClick={() => setFullScreenPlayer(false)} aria-label="Exit full screen"><Minimize2 size={17}/> Exit full screen</button>}</div></div>
             {isSpecial && !isNativeSpecial ? (
               <div className="special-player">
                 <div className="special-player-heading">
@@ -220,11 +218,11 @@ export default function KhalafTV() {
           </div>
 
           <div className="channels-section">
-            <div className="section-title-row"><div><h2>{onlyFavorites ? t.favorites : category === "All channels" ? t.explore : category}</h2><p>{loading ? t.loading : `${filtered.length.toLocaleString()} ${t.toExplore}`}</p></div><button className="refresh-button" onClick={loadChannels} title="Refresh channel list"><RefreshCw size={16}/><span>{t.refresh}</span></button></div>
+            <div className="section-title-row"><div><h2>{onlyFavorites ? t.favorites : category === "All countries" ? t.explore : category}</h2><p>{loading ? t.loading : `${filtered.length.toLocaleString()} ${t.toExplore}`}</p></div><button className="refresh-button" onClick={loadChannels} title="Refresh channel list"><RefreshCw size={16}/><span>{t.refresh}</span></button></div>
             <div className="search-row"><div className="search-box"><Search size={18}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder={t.search} aria-label={t.search}/>{query && <button onClick={() => setQuery("")} aria-label="Clear search"><X size={16}/></button>}</div><div className="filter-pill"><Volume2 size={15}/><span>{t.stream}</span></div></div>
             {error && <div className="error-box">{error}<button onClick={loadChannels}>{t.retry}</button></div>}
             {loading ? <div className="loading-grid">{Array.from({length:8},(_,i)=><div className="skeleton" key={i}/>)}</div> : filtered.length === 0 ? <div className="empty-state"><Search size={28}/><strong>{t.noResults}</strong><span>{t.noResultsHint}</span></div> :
-              <div className="channel-grid">{filtered.slice(0, 180).map((c,i) => { const special = "note" in c; return <article className={`channel-card ${selected?.name === c.name ? "playing" : ""}`} key={`${c.name}-${c.url}-${i}`}><button className="channel-main" onClick={() => {setSelected(c); setShowSpecialNotice(special); setMobileMenu(false);}}><span className="channel-logo">{"logo" in c && c.logo ? <img src={c.logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display="none";}}/> : <Tv size={24}/>}</span><span className="channel-info"><strong>{c.name}</strong><small>{special ? c.note : ("group" in c ? c.group || c.country || "Live TV" : "Live TV")}</small></span><span className="play-icon"><Play size={14} fill="currentColor"/></span></button><button className={`card-heart ${favorites.includes(c.name) ? "favorited" : ""}`} aria-label={`Favorite ${c.name}`} onClick={() => toggleFavorite(c.name)}><Heart size={15} fill={favorites.includes(c.name) ? "currentColor" : "none"}/></button></article>})}</div>}
+              <div className="channel-grid">{filtered.slice(0, 180).map((c,i) => { const special = "note" in c; return <article className={`channel-card ${selected?.name === c.name ? "playing" : ""}`} key={`${c.name}-${c.url}-${i}`}><button className="channel-main" onClick={() => {setSelected(c); setShowSpecialNotice(special); setMobileMenu(false); setFullScreenPlayer(true);}}><span className="channel-logo">{"logo" in c && c.logo ? <img src={c.logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display="none";}}/> : <Tv size={24}/>}</span><span className="channel-info"><strong>{c.name}</strong><small>{special ? c.note : ("group" in c ? c.group || c.country || "Live TV" : "Live TV")}</small></span><span className="play-icon"><Play size={14} fill="currentColor"/></span></button><button className={`card-heart ${favorites.includes(c.name) ? "favorited" : ""}`} aria-label={`Favorite ${c.name}`} onClick={() => toggleFavorite(c.name)}><Heart size={15} fill={favorites.includes(c.name) ? "currentColor" : "none"}/></button></article>})}</div>}
             {!loading && filtered.length > 180 && <p className="list-note">Showing the first 180 matches. Search to narrow down the list.</p>}
           </div>
           <footer className="footer"><span>© {new Date().getFullYear()} KHALAF TV</span><span>{t.footer}</span></footer>
