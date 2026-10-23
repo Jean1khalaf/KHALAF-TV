@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Hls from "hls.js";
 import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2 } from "lucide-react";
+import PWAInstallButton from "./PWAInstallButton";
 
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Special = { name: string; url: string; note: string };
@@ -169,7 +170,7 @@ export default function KhalafTV() {
       <header className="topbar">
         <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X/> : <Menu/>}</button>
         <a className="brand" href="#" aria-label="KHALAF TV home"><span className="brand-mark"><Tv size={22}/></span><span>KHALAF <b>TV</b><small>{t.tagline}</small></span></a>
-        <div className="topbar-right"><button className="language-toggle" onClick={() => setLanguage(language === "en" ? "ar" : "en")} aria-label={t.language}>{language === "en" ? "العربية" : "English"}</button><span className="live-indicator"><i/> {t.live}</span><span className="topbar-caption">{t.free}</span></div>
+        <div className="topbar-right"><PWAInstallButton /><button className="language-toggle" onClick={() => setLanguage(language === "en" ? "ar" : "en")} aria-label={t.language}>{language === "en" ? "العربية" : "English"}</button><span className="live-indicator"><i/> {t.live}</span><span className="topbar-caption">{t.free}</span></div>
       </header>
 
       <div className="layout">

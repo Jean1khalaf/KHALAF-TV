@@ -16,6 +16,44 @@ The three special Lebanese source pages now use a compact channel header, a larg
 - Optional Neon database endpoint for favorites; local browser storage works as a fallback.
 - No database credentials are committed to source control.
 
+
+## Install KHALAF TV on iPhone and Android (PWA)
+
+This project includes Progressive Web App support so visitors can add KHALAF TV to their device home screen without first publishing native apps to the App Store or Google Play. The site must be deployed over HTTPS; Vercel deployments use HTTPS by default. Installation always requires the visitor to confirm it. A website cannot silently install itself.
+
+### iPhone / iPad
+
+1. Deploy the website and open its HTTPS URL in Safari.
+2. Tap **Share**.
+3. Choose **Add to Home Screen**.
+4. Keep **Open as Web App** enabled if that option is shown, then tap **Add**.
+5. Launch KHALAF TV from the new home-screen icon.
+
+The **Install app** button inside KHALAF TV opens these instructions on iOS because Safari does not expose the Android-style `beforeinstallprompt` install event.
+
+### Android
+
+1. Open the HTTPS website in Chrome.
+2. Tap **Install app** in KHALAF TV. If the browser exposes its install prompt, the button opens it directly.
+3. Otherwise, open Chrome's three-dot menu and choose **Install app** or **Add to Home screen**, then confirm. Exact wording varies by browser and device.
+
+### PWA files included
+
+- `public/manifest.webmanifest` — app name, launch mode, colors, and icon declarations.
+- `public/sw.js` — service worker that caches the app shell and static assets for a basic offline fallback. It deliberately does not cache `/api` responses or live media streams.
+- `public/offline.html` — fallback page when the app shell cannot be reached offline.
+- `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`, `public/apple-touch-icon.png` — installation icons.
+- `components/PWAInstallButton.tsx` — platform-aware install button and guided instructions.
+
+### Test installation
+
+1. Deploy to a real HTTPS Vercel URL (or use `localhost` for local development).
+2. Open the URL on an actual phone.
+3. On Android/Chrome, check the install button and browser menu. On iOS, use Safari's Share menu.
+4. After deployment, if a prior service worker keeps old files cached, close and reopen the app or clear the site's browser storage before retesting.
+
+A PWA does not make live streams available offline. Channel listings may require a connection, and third-party streaming providers can block embedded playback.
+
 ## Important streaming notes
 
 The playlist is a directory of links, not a guarantee that every stream is online, authorized for every use, or playable in every browser. The iptv-org project describes its repository as a collection of publicly available channel links and notes that it does not host the video itself: https://github.com/iptv-org/iptv
