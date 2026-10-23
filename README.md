@@ -2,6 +2,10 @@
 
 A responsive live-TV directory built with Next.js, TypeScript, HLS.js, and optional Neon PostgreSQL persistence. Designed for deployment through GitHub + Vercel.
 
+## Latest player layout adjustment
+
+The three special Lebanese source pages now use a compact channel header, a larger responsive iframe area, and a KHALAF TV overlay. This improves the surrounding layout; it cannot remove banners or black bars rendered inside the third-party page itself.
+
 ## What is included
 
 - Responsive dark interface for desktop, tablets, and phones.

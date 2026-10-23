@@ -119,15 +119,23 @@ export default function KhalafTV() {
             <div className="player-topline"><span><i className="red-dot"/> NOW PLAYING</span><span className="quality-tag">LIVE</span></div>
             {isSpecial ? (
               <div className="special-player">
-                <div className="special-glow"><Tv size={46}/></div>
-                <div className="special-title">{selectedName}</div>
-                <p>This source is a third-party viewing page. KHALAF TV will keep you on this site, but the source may block in-page embedding.</p>
-                <div className="special-actions">
-                  <button className="primary-button" onClick={() => setShowSpecialNotice(!showSpecialNotice)}><Play size={16}/> Try in player</button>
-                  <a className="secondary-button" href={selectedUrl} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Open source page</a>
+                <div className="special-player-heading">
+                  <div className="special-glow"><Tv size={34}/></div>
+                  <div className="special-heading-copy">
+                    <div className="special-title">{selectedName}</div>
+                    <p>Live channel · KHALAF TV</p>
+                  </div>
+                  <a className="secondary-button" href={selectedUrl} target="_blank" rel="noreferrer"><ExternalLink size={15}/> Source</a>
                 </div>
-                {showSpecialNotice && <div className="embed-notice">The page below is loaded inside the player area. If it stays blank, the source likely blocks framing; use an authorized direct stream URL to enable native playback.</div>}
-                <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="no-referrer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" />
+                {showSpecialNotice && <div className="embed-notice">If the broadcast does not fit, this is part of the source page itself. For a clean, edge-to-edge picture, configure an authorized direct stream or official embed URL.</div>}
+                <div className="source-frame-wrap">
+                  <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="no-referrer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" />
+                  <div className="source-watermark">KHALAF <b>TV</b></div>
+                </div>
+                <div className="special-player-bottom">
+                  <span><i className="red-dot"/> SOURCE PLAYER</span>
+                  <button className="source-help" onClick={() => setShowSpecialNotice(!showSpecialNotice)}>{showSpecialNotice ? "Hide info" : "Why doesn't it fit?"}</button>
+                </div>
               </div>
             ) : (
               <div className="video-wrap">
