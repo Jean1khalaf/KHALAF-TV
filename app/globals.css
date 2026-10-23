@@ -4,5 +4,43 @@
 @keyframes shine{to{background-position:-200% 0}}
 @media(min-width:1500px){.channel-grid,.loading-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.video-wrap{aspect-ratio:16/7.5}}
 @media(max-width:1150px){.layout{grid-template-columns:220px minmax(0,1fr)}.channel-grid,.loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.main-content{padding:30px 24px}.sidebar{padding-left:12px;padding-right:12px}}
-@media(max-width:760px){.topbar{height:64px;padding:0 15px;gap:12px}.mobile-menu{display:grid;place-items:center;background:transparent;border:0;color:#cbd3e0;padding:5px}.brand{font-size:16px;gap:8px}.brand-mark{width:36px;height:36px;border-radius:11px}.brand-mark svg{width:19px}.brand small{font-size:7px;letter-spacing:1.8px}.topbar-right{margin-left:auto}.topbar-caption{display:none}.live-indicator{font-size:9px}.layout{display:block}.sidebar{display:none;position:fixed;z-index:19;top:64px;left:0;bottom:0;width:min(300px,86vw);height:auto;min-height:0;background:#0c111b;border-right:1px solid #30394a;box-shadow:20px 0 60px #0008}.sidebar.sidebar-open{display:block}.main-content{padding:25px 14px 20px}.welcome-row{margin-bottom:19px}.welcome-row h1{font-size:31px}.welcome-row p{font-size:11px}.channel-count strong{font-size:20px}.channel-count span{font-size:9px}.player-card{border-radius:13px}.player-topline{height:37px;padding:0 12px}.video-wrap{aspect-ratio:16/9;min-height:190px}.watermark{top:10px;right:10px;font-size:10px;padding:5px 7px}.video-caption{bottom:8px;left:8px;font-size:10px}.player-meta{padding:11px 12px}.now-channel img,.channel-placeholder{width:34px;height:34px}.favorite-button{padding:8px;font-size:10px}.channels-section{margin-top:27px}.section-title-row h2{font-size:19px}.section-title-row p{font-size:10px}.refresh-button{padding:8px}.refresh-button span{display:none}.search-row{gap:7px}.filter-pill{padding:0 8px;font-size:10px}.channel-grid,.loading-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.channel-main{gap:7px;padding:9px 25px 9px 8px}.channel-logo{width:33px;height:33px}.channel-info strong{font-size:10px}.channel-info small{font-size:8px}.play-icon{display:none}.card-heart{right:5px;top:6px}.footer{flex-direction:column;gap:8px;margin-top:28px}.footer span:last-child{text-align:left}.source-frame-wrap{height:clamp(260px,68vw,520px)}.special-player{padding:23px 12px 0}.special-title{font-size:20px}.special-player>p{font-size:11px}.channel-count{padding-left:8px}}
+@media(max-width:760px){.topbar{height:64px;padding:0 15px;gap:12px}.mobile-menu{display:grid;place-items:center;background:transparent;border:0;color:#cbd3e0;padding:5px}.brand{font-size:16px;gap:8px}.brand-mark{width:36px;height:36px;border-radius:11px}.brand-mark svg{width:19px}.brand small{font-size:7px;letter-spacing:1.8px}.topbar-right{margin-left:auto}.topbar-caption{display:none}.live-indicator{font-size:9px}.layout{display:block}.sidebar{display:none;position:fixed;z-index:19;top:64px;left:0;bottom:0;width:min(300px,86vw);height:auto;min-height:0;background:#0c111b;border-right:1px solid #30394a;box-shadow:20px 0 60px #0008}.sidebar.sidebar-open{display:block}.main-content{padding:25px 14px 20px}.welcome-row{margin-bottom:19px}.welcome-row h1{font-size:31px}.welcome-row p{font-size:11px}.channel-count strong{font-size:20px}.channel-count span{font-size:9px}.player-card{border-radius:13px}.player-topline{height:37px;padding:0 12px}.video-wrap{aspect-ratio:16/9;min-height:190px}.watermark{top:10px;right:10px;font-size:10px;padding:5px 7px}.video-caption{bottom:8px;left:8px;font-size:10px}.player-meta{padding:11px 12px}.now-channel img,.channel-placeholder{width:34px;height:34px}.favorite-button{padding:8px;font-size:10px}.channels-section{margin-top:27px}.section-title-row h2{font-size:19px}.section-title-row p{font-size:10px}.refresh-button{padding:8px}.refresh-button span{display:none}.search-row{gap:7px}.filter-pill{padding:0 8px;font-size:10px}.channel-grid,.loading-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.channel-main{gap:7px;padding:9px 25px 9px 8px}.channel-logo{width:33px;height:33px}.channel-info strong{font-size:10px}.channel-info small{font-size:8px}.play-icon{display:none}.card-heart{right:5px;top:6px}.footer{flex-direction:column;gap:8px;margin-top:28px}.footer span:last-child{text-align:left}.source-frame-wrap{height:clamp(260px,68vw,520px)}.special-player{padding:0}.special-title{font-size:16px}.channel-count{padding-left:8px}}
 @media(max-width:380px){.brand{font-size:14px}.welcome-row h1{font-size:27px}.channel-grid,.loading-grid{grid-template-columns:1fr}.channel-main{padding:10px}.channel-logo{width:38px;height:38px}.filter-pill span{display:none}.filter-pill{width:37px;justify-content:center}.video-wrap{min-height:170px}}
+
+/* KHALAF TV upgrade: bilingual controls, featured Lebanese channels, RTL, and mobile polish */
+.language-toggle{border:1px solid #343d50;background:#151b28;color:#c8b8ff;border-radius:9px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.lebanese-featured{margin:0 0 22px;padding:17px;border:1px solid #282f40;border-radius:15px;background:linear-gradient(125deg,#131827,#0d111a 68%);box-shadow:0 12px 34px #0002}
+.featured-title{margin-bottom:12px}.featured-title h2{font-size:17px}.featured-title p{font-size:11px}
+.featured-channel-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.featured-channel{display:flex;align-items:center;gap:10px;text-align:start;min-width:0;padding:12px;border:1px solid #2b3344;border-radius:11px;background:#111722;color:#e8ecf5;cursor:pointer;transition:border-color .18s,transform .18s,background .18s}
+.featured-channel:hover,.featured-channel.active{border-color:#8a68e8;background:#1b1930;transform:translateY(-1px)}
+.featured-logo{display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:10px;background:#302342;color:#d5c5ff;font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700}
+.featured-logo-1{background:#29213b;color:#f2b7d4}.featured-logo-2{background:#1d3040;color:#a9d8ff}
+.featured-channel>span:nth-child(2){min-width:0;flex:1}.featured-channel strong{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.featured-channel small{display:block;color:#8994a8;font-size:10px;margin-top:5px}.featured-play{color:#b8a2ff;flex:0 0 auto}
+[dir="rtl"] .topbar,[dir="rtl"] .topbar-right,[dir="rtl"] .brand,[dir="rtl"] .nav-item,[dir="rtl"] .special-nav,[dir="rtl"] .player-meta,[dir="rtl"] .now-channel,[dir="rtl"] .player-topline,[dir="rtl"] .section-title-row,[dir="rtl"] .search-row,[dir="rtl"] .featured-channel{direction:rtl}
+[dir="rtl"] .sidebar{border-right:0;border-left:1px solid #202635}
+[dir="rtl"] .sidebar-footer small{margin:9px 13px 0 0}
+[dir="rtl"] .card-heart{right:auto;left:8px}
+[dir="rtl"] .channel-main{padding:11px 11px 11px 31px;text-align:right}
+[dir="rtl"] .watermark{right:auto;left:18px}
+[dir="rtl"] .video-caption{left:auto;right:14px}
+[dir="rtl"] .footer span:last-child{text-align:left}
+[dir="rtl"] .special-player,[dir="rtl"] .embed-notice{text-align:right}
+[dir="rtl"] .source-watermark{right:auto;left:12px}
+@media(max-width:760px){
+  .topbar-right{gap:8px}.language-toggle{padding:7px 9px;font-size:10px}
+  .lebanese-featured{padding:12px;margin-bottom:16px}.featured-channel-grid{gap:7px}
+  .featured-channel{padding:9px;gap:7px}.featured-logo{width:32px;height:32px;flex-basis:32px;font-size:16px;border-radius:8px}
+  .featured-channel strong{font-size:10px}.featured-channel small{font-size:8px}.featured-play{width:13px}
+  .source-frame-wrap{height:clamp(260px,58vw,520px)}
+  [dir="rtl"] .sidebar{left:auto;right:0;border-left:0;border-right:1px solid #30394a}
+  [dir="rtl"] .channel-main{padding:9px 8px 9px 25px}
+  [dir="rtl"] .watermark{left:10px}
+  [dir="rtl"] .video-caption{right:8px}
+  [dir="rtl"] .footer span:last-child{text-align:right}
+}
+@media(max-width:420px){
+  .featured-channel-grid{grid-template-columns:1fr}
+  .featured-channel{padding:8px 10px}
+  .featured-channel small{margin-top:2px}
+}
