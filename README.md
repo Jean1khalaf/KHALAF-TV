@@ -100,3 +100,7 @@ README.md
 ## Credits and rights
 
 KHALAF TV is a channel-directory/player interface. It does not host or repackage video files. Only use streams you have permission to view, embed, and distribute, and respect the applicable terms of the source providers.
+
+## Searchable featured channels
+
+Al Hadath, MTV Lebanon, LBC Lebanon, and Al Jadeed Lebanon are included as featured entries in the main search results. Search for their names, then select the result to open it in the KHALAF TV player area. Configure optional direct stream URLs with `NEXT_PUBLIC_AL_HADATH_STREAM`, `NEXT_PUBLIC_MTV_LEBANON_STREAM`, `NEXT_PUBLIC_LBC_LEBANON_STREAM`, and `NEXT_PUBLIC_JADEED_LEBANON_STREAM`. These values are public in the browser; only use public playback URLs, never secrets. If a direct stream is not configured, the site falls back to the corresponding provider page in an iframe; playback depends on that provider allowing embedding. The interface includes responsive phone layouts and the mobile navigation menu.
