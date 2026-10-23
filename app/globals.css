@@ -44,3 +44,47 @@
   .featured-channel{padding:8px 10px}
   .featured-channel small{margin-top:2px}
 }
+
+/* Friendly, touch-first visual refresh */
+:root{--bg:#080b12;--surface:#111824;--surface2:#151d2b;--purple2:#b9a2ff}
+body{background:radial-gradient(ellipse at 70% -15%,#28214a 0,transparent 42%),#080b12;line-height:1.45}
+.topbar{padding-inline:clamp(16px,3vw,42px);background:rgba(8,11,18,.92)}
+.layout{grid-template-columns:238px minmax(0,1fr);max-width:1920px}
+.main-content{padding:clamp(22px,3vw,46px) clamp(16px,3vw,48px) 28px}
+.welcome-row{padding:clamp(18px,2.5vw,30px);border:1px solid #29283f;border-radius:20px;background:linear-gradient(115deg,#17182b 0%,#101621 58%,#111827 100%);margin-bottom:24px;box-shadow:0 18px 55px #0002}
+.welcome-row h1{font-size:clamp(30px,3.2vw,46px);letter-spacing:-1.5px}
+.welcome-row p{font-size:14px;line-height:1.6;max-width:460px}
+.eyebrow{padding:6px 9px;border:1px solid #55458a;border-radius:999px;width:max-content;background:#8b5cf616}
+.channel-count{padding:13px 16px;border:1px solid #33304c;background:#0d111c;border-radius:14px;min-width:112px}
+.lebanese-featured{padding:18px;border:1px solid #282f40;border-radius:18px;background:linear-gradient(140deg,#111824,#0d121c);margin-bottom:25px}
+.featured-channel-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.featured-channel{min-height:76px;padding:13px;border-radius:13px;background:#171e2c;border-color:#2a3447;transition:transform .18s,border-color .18s,background .18s}
+.featured-channel:hover{transform:translateY(-2px);border-color:#8b70ed;background:#1c2032}
+.featured-logo{width:43px;height:43px;border-radius:12px}
+.featured-channel strong{font-size:12px}.featured-channel small{font-size:10px}
+.player-card{border-radius:19px;box-shadow:0 20px 70px #0004}
+.channels-section{padding:22px;border:1px solid #252d3c;border-radius:18px;background:#0c111a;margin-top:26px}
+.search-row{margin:18px 0 20px}
+.search-box{min-height:48px;border-radius:13px;background:#141b28;border-color:#30394d;padding-inline:15px}
+.search-box input{font-size:14px;padding:14px 0}
+.channel-grid,.loading-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.channel-card{border-radius:14px;background:linear-gradient(145deg,#151d2a,#101620);border-color:#2b3547}
+.channel-main{min-height:78px;padding:13px 38px 13px 13px;gap:12px}
+.channel-logo{width:44px;height:44px;border-radius:12px}
+.channel-info strong{font-size:12px}.channel-info small{font-size:10px;margin-top:6px}
+.card-heart{right:10px;top:10px;padding:5px}
+.channel-card.playing{box-shadow:0 0 0 1px #8b70ed55}
+.section-title-row h2{font-size:23px}
+.footer{padding-top:22px;font-size:11px}
+@media(min-width:1500px){.channel-grid,.loading-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:1150px){.layout{grid-template-columns:210px minmax(0,1fr)}.channel-grid,.loading-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.featured-channel-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){
+ .topbar{height:64px;padding:0 13px}.layout{display:block}.main-content{padding:18px 12px 22px}
+ .welcome-row{align-items:flex-start;padding:19px 16px;border-radius:16px;gap:12px}.welcome-row h1{font-size:clamp(27px,7vw,34px);margin-top:10px}.welcome-row p{font-size:12px;max-width:250px}
+ .channel-count{min-width:76px;padding:9px 10px}.channel-count strong{font-size:19px}.channel-count span{font-size:9px}
+ .lebanese-featured{padding:13px;border-radius:15px}.featured-channel-grid{grid-template-columns:1fr;gap:8px}.featured-channel{min-height:66px;padding:10px 12px}.featured-logo{width:40px;height:40px}
+ .channels-section{padding:15px 12px;border-radius:15px}.section-title-row h2{font-size:20px}.search-row{margin:15px 0;gap:7px}.search-box{min-height:46px;padding-inline:11px}.search-box input{font-size:14px}
+ .channel-grid,.loading-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.channel-main{min-height:74px;padding:10px 28px 10px 9px;gap:8px}.channel-logo{width:35px;height:35px;border-radius:10px}.channel-info strong{font-size:10px}.channel-info small{font-size:9px}.card-heart{right:5px;top:5px}
+ .video-wrap{aspect-ratio:16/9;min-height:190px}.source-frame-wrap{height:clamp(250px,65vw,480px)}.player-meta{align-items:flex-start}.favorite-button{font-size:10px;padding:8px}
+}
+@media(max-width:420px){.welcome-row{display:block}.channel-count{display:flex;align-items:center;gap:8px;width:max-content;margin-top:15px}.channel-count strong{font-size:16px}.channel-grid,.loading-grid{grid-template-columns:1fr}.channel-main{min-height:68px;padding:10px 34px 10px 10px}.channel-logo{width:40px;height:40px}.channel-info strong{font-size:12px}.channel-info small{font-size:10px}.filter-pill{display:none}.featured-channel-grid{grid-template-columns:1fr}}

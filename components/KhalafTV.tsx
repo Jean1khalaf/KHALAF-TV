@@ -15,6 +15,16 @@ const SPECIALS: Special[] = [
 ];
 
 const isDirectMedia = (url: string) => /\.(m3u8|mp4|webm|mpd)(\?|#|$)/i.test(url);
+// The curated in-site entries take precedence over similarly named playlist entries.
+// This keeps each requested channel to one result even when IPTV-org lists multiple qualities.
+const canonicalSpecial = (name: string) => {
+  const n = name.normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  if (/\b(al )?hadath\b|alarabiya.*hadath/.test(n)) return "al hadath";
+  if (/\bmtv\b/.test(n) && (n.includes("lebanon") || /\bmtv\b/.test(n))) return "mtv lebanon";
+  if (/\blbc\b/.test(n)) return "lbc lebanon";
+  if (/\b(al )?jadeed\b/.test(n)) return "al jadeed lebanon";
+  return null;
+};
 const COPY = {
   en: {
     discover: "DISCOVER", all: "All channels", favorites: "My favorites", lebanese: "LEBANESE CHANNELS",
@@ -111,6 +121,8 @@ export default function KhalafTV() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const regular = channels.filter(c => {
+      // Hide playlist duplicates for channels represented by the curated special cards.
+      if (canonicalSpecial(c.name)) return false;
       const matchesQuery = `${c.name} ${c.group || ""} ${c.country || ""}`.toLowerCase().includes(q);
       const matchesGroup = category === "All channels" || (c.group || "Other") === category;
       const matchesFav = !onlyFavorites || favorites.includes(c.name);
