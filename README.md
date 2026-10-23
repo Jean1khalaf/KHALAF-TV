@@ -148,3 +148,27 @@ KHALAF TV is a channel-directory/player interface. It does not host or repackage
 ## Searchable featured channels
 
 Al Hadath, MTV Lebanon, LBC Lebanon, and Al Jadeed Lebanon are included as featured entries in the main search results. Search for their names, then select the result to open it in the KHALAF TV player area. Configure optional direct stream URLs with `NEXT_PUBLIC_AL_HADATH_STREAM`, `NEXT_PUBLIC_MTV_LEBANON_STREAM`, `NEXT_PUBLIC_LBC_LEBANON_STREAM`, and `NEXT_PUBLIC_JADEED_LEBANON_STREAM`. These values are public in the browser; only use public playback URLs, never secrets. If a direct stream is not configured, the site falls back to the corresponding provider page in an iframe; playback depends on that provider allowing embedding. The interface includes responsive phone layouts and the mobile navigation menu.
+
+## KHALAF TV — Smart TV update
+
+This version builds on the existing Next.js/PWA project and adds:
+
+- A larger-card, remote/keyboard-friendly channel directory.
+- Three interface languages: English, French and Arabic (RTL for Arabic).
+- A local **Recently watched** list (up to 30 channel names), alongside local favorites.
+- Country filters and duplicate suppression for the four curated Elahmad entries.
+- Mobile playback fallback: the provider page can still block embedding; use **Open source** to open the provider directly when required.
+- Existing PWA manifest, service worker, Apple touch icon, install guidance and Vercel setup are retained.
+
+### Validate before deploying
+
+```bash
+npm install
+npm run build
+```
+
+Deploy the repository to Vercel over HTTPS. On iPhone, open the site in Safari and use **Share → Add to Home Screen**. On Android, open it in Chrome and choose **Install app** when available.
+
+### Playback limitation
+
+The four Elahmad URLs are third-party web pages, not guaranteed direct media streams. The `Referer` policy may help if the provider expects a referring URL, but cannot override provider-side blocking, authentication, cookies, or anti-embedding rules. When embedding is refused, open the source page or configure a stream/player that the broadcaster authorizes for embedding.
