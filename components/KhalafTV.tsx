@@ -195,11 +195,11 @@ export default function KhalafTV() {
                     <div className="special-title">{selectedName}</div>
                     <p>{t.sourceNote}</p>
                   </div>
-                  <a className="secondary-button" href={selectedUrl} target="_blank" rel="noreferrer"><ExternalLink size={15}/> {t.source}</a>
+                  <a className="secondary-button" href={selectedUrl} target="_blank" rel="noopener"><ExternalLink size={15}/> {t.source}</a>
                 </div>
                 {showSpecialNotice && <div className="embed-notice">{t.sourceWarning}</div>}
                 <div className="source-frame-wrap">
-                  <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="no-referrer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" />
+                  <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="unsafe-url" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" />
                   <div className="source-watermark">KHALAF <b>TV</b></div>
                 </div>
                 <div className="special-player-bottom">

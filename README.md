@@ -6,6 +6,12 @@ A responsive live-TV directory built with Next.js, TypeScript, HLS.js, and optio
 
 The three special Lebanese source pages now use a compact channel header, a larger responsive iframe area, and a KHALAF TV overlay. This improves the surrounding layout; it cannot remove banners or black bars rendered inside the third-party page itself.
 
+## Mobile Elahmad playback adjustment
+
+The four Elahmad pages (MTV Lebanon, LBC Lebanon, Al Jadeed Lebanon, and Al Hadath) are embedded with `referrerPolicy="unsafe-url"` so the browser can send the referring page URL when requesting the provider page. The “Open source” link no longer uses `noreferrer`, which would suppress that header.
+
+This can help if the provider rejects requests when the referrer is missing, but it is not a guarantee: the provider may require its own site as the referrer, block iframe embedding, use anti-hotlink checks on the underlying media URL, or require cookies. The parent website cannot set arbitrary headers for requests made by a third-party player. If it still fails on mobile, use the provider page directly or configure a provider-authorized direct stream/official embed URL. `unsafe-url` sends the full KHALAF TV page URL to the provider, so use it only where appropriate.
+
 ## What is included
 
 - Responsive dark interface for desktop, tablets, and phones.
