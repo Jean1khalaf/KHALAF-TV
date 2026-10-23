@@ -12,7 +12,7 @@ The three special Lebanese source pages now use a compact channel header, a larg
 - Loads the public `iptv-org` M3U playlist through a server-side API route.
 - Search, categories, channel selection, and favorites.
 - HLS playback for compatible `.m3u8` streams, with the KHALAF TV watermark in the player.
-- Dedicated MTV Lebanon, LBC Lebanon, and Jadeed Lebanon entries.
+- Dedicated MTV Lebanon, LBC Lebanon, Al Jadeed Lebanon, and Al Hadath entries.
 - Optional Neon database endpoint for favorites; local browser storage works as a fallback.
 - No database credentials are committed to source control.
 
@@ -20,7 +20,7 @@ The three special Lebanese source pages now use a compact channel header, a larg
 
 The playlist is a directory of links, not a guarantee that every stream is online, authorized for every use, or playable in every browser. The iptv-org project describes its repository as a collection of publicly available channel links and notes that it does not host the video itself: https://github.com/iptv-org/iptv
 
-The three Elahmad URLs provided are web pages, not confirmed direct video stream URLs. This starter tries to display each page inside the player area. It will only work if that site permits framing and the embedded player works in that context. Browser security rules such as `X-Frame-Options` and CSP `frame-ancestors` cannot be bypassed from a normal website. If framing is blocked, use a direct stream URL you are authorized to embed or an official provider embed URL. The external-source link is provided as a fallback. Do not attempt to bypass access controls or DRM.
+The four Elahmad URLs provided are web pages, not confirmed direct video stream URLs. This starter tries to display each page inside the player area. It will only work if that site permits framing and the embedded player works in that context. Browser security rules such as `X-Frame-Options` and CSP `frame-ancestors` cannot be bypassed from a normal website. If framing is blocked, use a direct stream URL you are authorized to embed or an official provider embed URL. The external-source link is provided as a fallback. Do not attempt to bypass access controls or DRM.
 
 A logo overlay is drawn over the native player for streams played through KHALAF TV. It cannot be guaranteed over a third-party page's own embedded player.
 
