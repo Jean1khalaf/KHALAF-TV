@@ -173,15 +173,11 @@ Deploy the repository to Vercel over HTTPS. On iPhone, open the site in Safari a
 
 The four Elahmad URLs are third-party web pages, not guaranteed direct media streams. The `Referer` policy may help if the provider expects a referring URL, but cannot override provider-side blocking, authentication, cookies, or anti-embedding rules. When embedding is refused, open the source page or configure a stream/player that the broadcaster authorizes for embedding.
 
-## Windows desktop app (.exe) — automatic publishing
+## Windows desktop app (.exe)
 
-The Electron desktop app opens the deployed KHALAF TV website in a Windows window. Channel streams remain online and are not bundled in the installer.
+The project includes an Electron wrapper for Windows. It opens the deployed KHALAF TV website in a desktop window; streams remain online and are not bundled in the installer. The Windows installer is built automatically by the included GitHub workflow when source changes are pushed to `main` or `master`.
 
-The GitHub Actions workflow at `.github/workflows/windows-installer.yml` builds the Windows installer automatically on every push to `main` or `master`, then publishes `KHALAF-TV-Setup.exe` as the newest public GitHub Release. There is no need to open Actions or click **Run workflow**. The repository must allow GitHub Actions and the workflow's `GITHUB_TOKEN` must have contents write permission (configured in the workflow).
-
-The website button points to `/api/download/windows`, which streams the installer through your own website domain so visitors do not see GitHub. The download becomes available after the first automatic build finishes successfully. The API route looks up the newest release in the correct repository, `Jean1khalaf/KHALAF-TV`.
-
-The source ZIP does not contain a prebuilt Windows executable. On the first push after deploying these changes, wait for the automatic Windows build to finish, then test the website's **Download for Windows** button. If the build fails, open the failed run's log to see the packaging error; the website cannot download an installer until a successful release exists.
+The website's Windows button points to `/api/download/windows`. This endpoint streams the latest published installer through your own website domain, so visitors do not navigate to GitHub. The first Windows build must finish successfully before downloads become available. No manual workflow run is required.
 
 ## Smart TV display
 
