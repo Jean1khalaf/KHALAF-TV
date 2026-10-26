@@ -1,20 +1,10 @@
-KHALAF TV direct Windows download
+KHALAF TV Windows download
 
-The website download button points to:
-  /downloads/KHALAF-TV-Setup.exe
+The website's Windows download button uses /api/download/windows. The API streams
+KHALAF-TV-Setup.exe from the newest public release of Jean1khalaf/KHALAF-TV.
 
-A real Windows installer must exist at this path for the download to work. The original source ZIP did not contain an EXE, so this ZIP cannot include a genuine installer until one is built.
+The .exe is built and published automatically by .github/workflows/windows-installer.yml
+when code is pushed to main or master. No manual Actions run is required. The first
+build must complete successfully before the website can serve the installer.
 
-Build locally on a Windows PC (no GitHub Actions required):
-  1. Open PowerShell in the project root.
-  2. Set the deployed website URL if it differs from the default:
-       $env:KHALAF_TV_URL="https://khalaf-tv.vercel.app/"
-  3. Run:
-       .\build-windows-installer.ps1
-  4. This creates/copies public\downloads\KHALAF-TV-Setup.exe.
-  5. Deploy the updated project to your website host (for example Vercel).
-
-The live URL will then be:
-  https://YOUR-DOMAIN/downloads/KHALAF-TV-Setup.exe
-
-The desktop app opens the configured deployed website in an Electron window. The EXE must be built on Windows (or a compatible Windows build environment). Do not rename a non-installer file to .exe.
+The source ZIP does not include a prebuilt Windows executable.

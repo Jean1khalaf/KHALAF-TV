@@ -43,6 +43,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "artifactName": "KHALAF-TV-Setup.${ext}"
   }
 }
