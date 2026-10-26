@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as Ably from "ably";
 import { Pause, Play, Volume2, Tv, Power, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
@@ -8,20 +8,32 @@ export default function RemoteClient() {
   const [code, setCode] = useState(""); const [joined, setJoined] = useState<Joined | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]); const [selected, setSelected] = useState("");
   const [status, setStatus] = useState("Enter the code shown on your TV."); const [error, setError] = useState("");
+  const clientRef = useRef<Ably.Realtime | null>(null); const channelRef = useRef<Ably.RealtimeChannel | null>(null); const commandSeq = useRef(0);
   const [volume, setVolume] = useState(80); const [playing, setPlaying] = useState(true); const [muted, setMuted] = useState(false); const [remoteFullscreen, setRemoteFullscreen] = useState(false); const [query, setQuery] = useState("");
   useEffect(() => { const c = new URLSearchParams(location.search).get("code"); if (c) setCode(c); fetch("/api/channels").then(r=>r.json()).then(d=>setChannels(Array.isArray(d.channels)?d.channels:[])).catch(()=>{}); }, []);
   useEffect(() => {
     if (!joined) return;
     const client = new Ably.Realtime({ authUrl: "/api/pairing/token", authMethod: "POST", authParams: { sessionId: joined.sessionId, role: "phone", secret: joined.phoneSecret }, autoConnect: true });
     const channel = client.channels.get(joined.channel);
-    channel.subscribe("status", (message) => { const data = message.data as { type?: string; channelName?: string; playing?: boolean; volume?: number }; if (data.type === "tv-status") { setSelected(data.channelName || ""); if (typeof data.playing === "boolean") setPlaying(data.playing); if (typeof data.volume === "number") setVolume(data.volume); } });
-    client.connection.on("connected", async () => { setStatus("Connected · remote ready"); try { await channel.publish("remote", { type: "phone-connected" }); } catch {} });
+    clientRef.current = client; channelRef.current = channel;
+    channel.subscribe("status", (message) => { const data = message.data as { type?: string; channelName?: string; playing?: boolean; volume?: number; commandId?: number }; if (data.type === "tv-status") { setSelected(data.channelName || ""); if (typeof data.playing === "boolean") setPlaying(data.playing); if (typeof data.volume === "number") setVolume(data.volume); } else if (data.type === "command-ack") { setStatus("Connected · TV received command"); } });
+    client.connection.on("connected", async () => {
+      setStatus("Connected · waiting for TV");
+      try {
+        // Ensure the phone's channel is attached before sending the handshake.
+        await channel.attach();
+        await channel.publish("remote", { type: "phone-connected" });
+        setStatus("Connected · remote ready");
+      } catch {
+        setError("Connected to messaging, but the remote channel could not attach or send. Check Ably permissions and pair again.");
+      }
+    });
     client.connection.on("failed", () => setError("Realtime connection failed. Try pairing again."));
-    return () => { channel.unsubscribe(); client.close(); };
+    return () => { clientRef.current = null; channelRef.current = null; channel.unsubscribe(); client.close(); };
   }, [joined]);
   const visibleChannels = useMemo(() => channels.filter(c => c.name.toLowerCase().includes(query.toLowerCase())).slice(0,100), [channels,query]);
   async function pair(e: React.FormEvent) { e.preventDefault(); setError(""); try { const r=await fetch("/api/pairing/join",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:code.replace(/\s/g,"")})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||"Could not pair."); setJoined(d); setStatus("Connecting to TV…"); } catch(e) { setError(e instanceof Error?e.message:"Could not pair."); } }
-  async function send(command: Record<string, unknown>) { if (!joined) return; try { const client = new Ably.Realtime({ authUrl: "/api/pairing/token", authMethod: "POST", authParams: { sessionId: joined.sessionId, role: "phone", secret: joined.phoneSecret }, autoConnect: true }); await new Promise<void>((resolve,reject)=>{client.connection.once("connected",()=>resolve());client.connection.once("failed",()=>reject(new Error("Connection failed")));}); await client.channels.get(joined.channel).publish("remote", { type:"remote-command", command }); client.close(); } catch { setError("Command could not be sent. Check the connection and pair again."); } }
+  async function send(command: Record<string, unknown>) { if (!joined) return; try { const client = clientRef.current; const channel = channelRef.current; if (!client || !channel) throw new Error("Remote connection is not ready."); if (client.connection.state !== "connected") await new Promise<void>((resolve,reject)=>{ client.connection.once("connected",()=>resolve()); client.connection.once("failed",()=>reject(new Error("Connection failed"))); }); await channel.attach(); const commandId = ++commandSeq.current; await channel.publish("remote", { type:"remote-command", commandId, command }); setError(""); setStatus("Connected · command sent, waiting for TV"); } catch { setError("Command could not be sent. Reconnect the phone remote and try again."); } }
   function changeVolume(v:number) { setVolume(v); void send({action:"volume", value:v}); }
   return <main className="remote-page"><header className="remote-header"><div className="remote-brand"><span><Tv/></span><div><b>KHALAF TV</b><small>PHONE REMOTE</small></div></div><span className={`remote-status ${joined?"is-connected":""}`}><i/>{joined?status:"Not connected"}</span></header>
     {!joined ? <form className="remote-pair-card" onSubmit={pair}><div className="remote-icon"><Smartphone size={28}/></div><h1>Connect to your TV</h1><p>Enter the 8-digit pairing code displayed on your KHALAF TV screen.</p><label htmlFor="pair-code">Pairing code</label><input id="pair-code" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,8))} placeholder="12345678" required/><button className="remote-primary" disabled={code.length!==8}>Connect remote</button>{error&&<p className="remote-error">{error}</p>}<small>Codes expire after 10 minutes. Keep the code private.</small></form> : <div className="remote-controls"><div className="remote-connected-card"><span className="connected-mark"><Tv size={23}/></span><div><strong>TV connected</strong><small>{selected || "Choose a channel below"}</small></div><button title="Disconnect remote" onClick={()=>{void send({action:"disconnect"});setJoined(null);setStatus("Disconnected");}}><Power size={18}/></button></div>

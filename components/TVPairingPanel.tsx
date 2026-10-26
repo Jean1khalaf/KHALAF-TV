@@ -28,13 +28,30 @@ export default function TVPairingPanel({ onCommand, onClose }: Props) {
     const onMessage = (message: Ably.Message) => {
       const data = message.data as Record<string, unknown>;
       if (data?.type === "phone-connected") setStatus("Phone connected · remote is ready");
-      else if (data?.type === "remote-command") onCommand(data.command as Record<string, unknown>);
+      else if (data?.type === "remote-command") {
+        try {
+          onCommand(data.command as Record<string, unknown>);
+          void channel.publish("status", { type: "command-ack", commandId: data.commandId, receivedAt: Date.now() });
+          setStatus("Phone connected · last command received");
+        } catch {
+          setError("The TV received a command but could not apply it.");
+        }
+      }
       else if (data?.type === "phone-disconnected") setStatus("Phone disconnected");
     };
-    channel.subscribe(onMessage);
+    // Subscribe only to command/handshake messages, then explicitly attach before
+    // telling the phone the TV is ready. This avoids a connected phone publishing
+    // before the TV has finished attaching its channel subscription.
+    channel.subscribe("remote", onMessage);
     client.connection.on("connected", onConnected);
     client.connection.on("failed", () => setError("Ably connection failed. Check your API key and network."));
-    return () => { channel.unsubscribe(); client.close(); };
+    let cancelled = false;
+    void channel.attach().then(() => {
+      if (!cancelled) setStatus("Waiting for your phone to connect");
+    }).catch(() => {
+      if (!cancelled) setError("TV could not subscribe to remote commands. Check Ably channel permissions and network.");
+    });
+    return () => { cancelled = true; channel.unsubscribe(); client.close(); };
   }, [session, onCommand]);
   const remoteUrl = typeof window !== "undefined" ? `${window.location.origin}/remote` : "/remote";
   const qrValue = `${remoteUrl}?code=${session?.code || ""}`;
