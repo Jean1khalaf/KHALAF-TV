@@ -1,7 +1,17 @@
-Windows installer publishing
+KHALAF TV direct Windows download
 
-The website download button uses /api/download/windows and streams the latest published KHALAF-TV-Setup.exe through the website domain.
+The website serves the Windows installer through:
+  /api/download/windows
 
-The GitHub Actions workflow at .github/workflows/windows-installer.yml runs automatically on pushes to main or master. It builds the Windows installer and attaches it to a GitHub Release.
+The installer is built automatically on pushes to main or master by:
+  .github/workflows/windows-installer.yml
 
-Important: the build must complete successfully once before the download works. The Electron Builder artifactName is explicitly set to KHALAF-TV-Setup.exe so the generated filename matches the release workflow and website API.
+The first successful build creates a GitHub Release containing:
+  KHALAF-TV-Setup.exe
+
+After you upload these source files to the GitHub repository and commit them,
+the build should start automatically. You do not need to click Run workflow.
+The endpoint will only download the installer after the release asset exists.
+
+The desktop app is an Electron wrapper that opens the hosted KHALAF TV website.
+It does not bundle TV streams offline.
