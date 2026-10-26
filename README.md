@@ -201,15 +201,19 @@ Use the **TV display** button in the website header to enlarge channel cards and
 
 The Electron wrapper opens the deployed KHALAF TV website in a desktop window; it does not bundle or host the streams. A Windows installer must be built and uploaded before the website's Windows download link can work.
 
-### Build through GitHub Actions (recommended)
+### Build and publish fully online with GitHub Actions
 
-1. Push this project to the GitHub repository used by your site.
-2. In **Settings → Secrets and variables → Actions → Variables**, add `KHALAF_TV_URL` with the exact deployed HTTPS URL (for example, your actual Vercel domain).
-3. Open **Actions → Build KHALAF TV for Windows → Run workflow**. The workflow creates a Windows NSIS installer and uploads it as the `KHALAF-TV-Windows-Installer` artifact.
-4. Download the artifact and copy the resulting `.exe` into `public/downloads/KHALAF-TV-Setup.exe`. Commit and redeploy the website so the download link serves the installer.
+This ZIP includes `.github/workflows/build-windows-installer.yml`. After you push the project to the GitHub repository `KHALAF-TV/khalaf-tv`:
 
-The checked-in `desktop/config.json` intentionally contains a placeholder. Do not distribute an installer until the workflow has embedded your real HTTPS website URL. The build workflow runs on a Windows runner so it can produce a Windows installer without requiring Windows on your own computer.
+1. In GitHub, open **Settings → Secrets and variables → Actions → Variables** and add `KHALAF_TV_URL` with your deployed HTTPS website URL. If omitted, the workflow uses `https://khalaf-tv.vercel.app/`.
+2. To create a downloadable release, create and push a version tag, for example `v1.0.0`. GitHub Actions builds the Windows installer on a hosted Windows runner and attaches `KHALAF-TV-Setup.exe` to the GitHub Release. No local Windows computer is required.
+3. To test a build without publishing a release, open **Actions → Build KHALAF TV for Windows → Run workflow**. The installer will be available under the workflow run's **Artifacts** section.
+4. The website's **Download for Windows** button links directly to the latest GitHub Release installer:
+   `https://github.com/KHALAF-TV/khalaf-tv/releases/latest/download/KHALAF-TV-Setup.exe`
 
+The release link works only after the first successful tagged release exists, and assumes the repository owner/name is `KHALAF-TV/khalaf-tv`. If you use a different repository, update that URL in `components/KhalafTV.tsx`. Deploy the changed website after pushing the project so the updated button appears online.
+
+The Windows installer is a small Electron wrapper that opens the live KHALAF TV website; it does not bundle live streams or make them available offline. Windows may show a SmartScreen warning until the installer is signed with a trusted code-signing certificate.
 
 ## Windows installer download and release
 
