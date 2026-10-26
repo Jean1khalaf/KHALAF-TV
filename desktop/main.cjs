@@ -2,7 +2,8 @@ const { app, BrowserWindow, shell } = require('electron');
 const { URL } = require('url');
 
 function createWindow() {
-  const { siteUrl } = require('./config.json');
+  const { siteUrl: configuredSiteUrl } = require('./config.json');
+  const siteUrl = process.env.KHALAF_TV_URL || configuredSiteUrl;
   if (!siteUrl || !/^https:\/\//i.test(siteUrl)) {
     throw new Error('Set KHALAF_TV_URL to the deployed HTTPS KHALAF TV website before building the Windows installer.');
   }

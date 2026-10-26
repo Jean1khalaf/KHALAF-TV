@@ -177,7 +177,14 @@ The four Elahmad URLs are third-party web pages, not guaranteed direct media str
 
 The project includes an Electron wrapper for Windows. It opens the deployed KHALAF TV website in a desktop window. Set `KHALAF_TV_URL` to your production HTTPS URL when building/testing; for example in PowerShell: `$env:KHALAF_TV_URL="https://your-domain.example"`. Then run `npm install`, `npm run desktop:dev` to test, or `npm run desktop:build` to create a Windows installer under `dist-desktop/`.
 
-To enable the website's **Windows .exe** download link, copy the generated installer into `public/downloads/KHALAF-TV-Setup.exe` before deploying. The download link will not work until that real installer is built and placed there. Windows installers should be built on Windows (or a compatible CI runner).
+To build and publish the Windows installer **without GitHub Actions**, run PowerShell on a Windows PC from the project root:
+
+```powershell
+$env:KHALAF_TV_URL="https://khalaf-tv.vercel.app/"
+.\build-windows-installer.ps1
+```
+
+The script installs dependencies, builds the Electron NSIS installer, and copies the real `.exe` to `public/downloads/KHALAF-TV-Setup.exe`. Then deploy the updated project to your website host. The website button points directly to `/downloads/KHALAF-TV-Setup.exe` and requests a download. The original source ZIP did **not** contain an installer binary, so the link only works after you run this build script and deploy the generated file. Do not create a placeholder or rename another file to `.exe`.
 
 ## Smart TV display
 
