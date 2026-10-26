@@ -1,3 +1,4 @@
+
 name: Build and publish KHALAF TV Windows installer
 
 on:
@@ -13,6 +14,7 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,30 +24,38 @@ jobs:
         with:
           node-version: 22
 
-      # This repository has no package-lock.json, so do not enable setup-node npm caching.
       - name: Install dependencies
         run: npm install
 
       - name: Build Windows installer
-        run: npm run desktop:build
+        run: npm run desktop:build -- --publish never
 
       - name: Verify and rename installer
         shell: pwsh
         run: |
           $installer = Get-ChildItem -Path "dist-desktop" -Filter "*.exe" -File |
-            Where-Object { $_.Name -notlike "*-uninstaller.exe" } |
+            Where-Object { $_.Name -notlike "*uninstaller*" } |
             Select-Object -First 1
-          if (-not $installer) {
-            Get-ChildItem -Path "dist-desktop" -Recurse | Select-Object FullName
-            throw "No Windows setup EXE was created. Check electron-builder output above."
-          }
-          Copy-Item -LiteralPath $installer.FullName -Destination "KHALAF-TV-Setup.exe" -Force
 
-      - name: Publish installer to a stable release
+          if (-not $installer) {
+            Get-ChildItem -Path "dist-desktop" -Recurse |
+              Select-Object FullName
+            throw "Windows installer EXE was not created."
+          }
+
+          Copy-Item -LiteralPath $installer.FullName `
+            -Destination "KHALAF-TV-Setup.exe" -Force
+
+          Write-Host "Installer ready: KHALAF-TV-Setup.exe"
+
+      - name: Publish installer to GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: windows-installer
           name: KHALAF TV Windows Installer
+          body: Download KHALAF-TV-Setup.exe to install KHALAF TV on Windows.
           make_latest: true
           files: KHALAF-TV-Setup.exe
           fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
