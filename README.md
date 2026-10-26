@@ -172,3 +172,33 @@ Deploy the repository to Vercel over HTTPS. On iPhone, open the site in Safari a
 ### Playback limitation
 
 The four Elahmad URLs are third-party web pages, not guaranteed direct media streams. The `Referer` policy may help if the provider expects a referring URL, but cannot override provider-side blocking, authentication, cookies, or anti-embedding rules. When embedding is refused, open the source page or configure a stream/player that the broadcaster authorizes for embedding.
+
+## Windows desktop app (.exe)
+
+The project includes an Electron wrapper for Windows. It opens the deployed KHALAF TV website in a desktop window. Set `KHALAF_TV_URL` to your production HTTPS URL when building/testing; for example in PowerShell: `$env:KHALAF_TV_URL="https://your-domain.example"`. Then run `npm install`, `npm run desktop:dev` to test, or `npm run desktop:build` to create a Windows installer under `dist-desktop/`.
+
+To enable the website's **Windows .exe** download link, copy the generated installer into `public/downloads/KHALAF-TV-Setup.exe` before deploying. The download link will not work until that real installer is built and placed there. Windows installers should be built on Windows (or a compatible CI runner).
+
+## Smart TV display
+
+Use the **TV display** button in the website header to enlarge channel cards and controls for viewing from a distance on a Smart TV. Open the site in the TV's built-in browser and select TV display mode. Playback still depends on the channel provider, browser codec support, and whether the stream permits embedding.
+
+## Android TV / Google TV display mode
+
+- Open the deployed site in the TV browser and add `?tv=1` to the URL to enable the larger TV layout by default.
+- The **TV display** toggle also switches the layout on/off.
+- Use a browser that supports the site's JavaScript and video formats. Playback of individual streams still depends on the source provider and Android TV browser codecs; some third-party pages block embedding.
+- Remote arrow keys move focus between visible controls in TV mode. Press the remote's OK/Select button to activate a focused control.
+
+## Windows desktop installer (.exe)
+
+The Electron wrapper opens the deployed KHALAF TV website in a desktop window; it does not bundle or host the streams. A Windows installer must be built and uploaded before the website's Windows download link can work.
+
+### Build through GitHub Actions (recommended)
+
+1. Push this project to the GitHub repository used by your site.
+2. In **Settings → Secrets and variables → Actions → Variables**, add `KHALAF_TV_URL` with the exact deployed HTTPS URL (for example, your actual Vercel domain).
+3. Open **Actions → Build KHALAF TV for Windows → Run workflow**. The workflow creates a Windows NSIS installer and uploads it as the `KHALAF-TV-Windows-Installer` artifact.
+4. Download the artifact and copy the resulting `.exe` into `public/downloads/KHALAF-TV-Setup.exe`. Commit and redeploy the website so the download link serves the installer.
+
+The checked-in `desktop/config.json` intentionally contains a placeholder. Do not distribute an installer until the workflow has embedded your real HTTPS website URL. The build workflow runs on a Windows runner so it can produce a Windows installer without requiring Windows on your own computer.

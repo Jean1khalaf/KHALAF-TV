@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2 } from "lucide-react";
+import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2, Monitor } from "lucide-react";
 import PWAInstallButton from "./PWAInstallButton";
 
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
@@ -87,6 +87,7 @@ export default function KhalafTV() {
   const [mobileMenu, setMobileMenu] = useState(false);
   const [showSpecialNotice, setShowSpecialNotice] = useState(false);
   const [language, setLanguage] = useState<"en" | "fr" | "ar">("en");
+  const [tvMode, setTvMode] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [onlyHistory, setOnlyHistory] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -104,6 +105,36 @@ export default function KhalafTV() {
       setError(e instanceof Error ? e.message : "Unable to load channels");
     } finally { setLoading(false); }
   }
+
+  // Enable TV layout from ?tv=1 so Android TV users can bookmark a direct TV-mode URL.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      setTvMode(params.get("tv") === "1");
+    } catch {}
+  }, []);
+
+  // Android TV remotes often emit arrow/OK keys. Keep focus visible and allow
+  // directional movement through interactive controls when TV mode is active.
+  useEffect(() => {
+    if (!tvMode) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)) return;
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      const items = Array.from(document.querySelectorAll<HTMLElement>(
+        '.tv-mode button:not(:disabled), .tv-mode a[href], .tv-mode input:not(:disabled)'
+      )).filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement as HTMLElement);
+      const delta = (event.key === "ArrowDown" || event.key === "ArrowRight") ? 1 : -1;
+      const next = current < 0 ? 0 : (current + delta + items.length) % items.length;
+      event.preventDefault();
+      items[next]?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [tvMode]);
 
   useEffect(() => {
     try { setHistory(JSON.parse(localStorage.getItem("khalaf-history") || "[]")); } catch {}
@@ -191,11 +222,11 @@ export default function KhalafTV() {
   const selectedLogo = selected && "logo" in selected ? selected.logo : undefined;
 
   return (
-    <main className="app-shell" lang={language} dir={language === "ar" ? "rtl" : "ltr"}>
+    <main className={`app-shell ${tvMode ? "tv-mode" : ""}`} lang={language} dir={language === "ar" ? "rtl" : "ltr"}>
       <header className="topbar">
         <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X/> : <Menu/>}</button>
         <a className="brand" href="#" aria-label="KHALAF TV home"><span className="brand-mark"><Tv size={22}/></span><span>KHALAF <b>TV</b><small>{t.tagline}</small></span></a>
-        <div className="topbar-right"><PWAInstallButton /><button className="language-toggle" onClick={() => setLanguage(language === "en" ? "fr" : language === "fr" ? "ar" : "en")} aria-label={t.language}>{language === "en" ? "FR" : language === "fr" ? "العربية" : "EN"}</button><span className="live-indicator"><i/> {t.live}</span><span className="topbar-caption">{t.free}</span></div>
+        <div className="topbar-right"><button className="tv-mode-toggle" onClick={() => setTvMode(v => !v)} title="Optimize for a Smart TV screen"><Monitor size={15}/><span>{tvMode ? "Exit TV mode" : "TV display"}</span></button><span className="windows-download-button windows-download-pending" aria-disabled="true" title="The installer will be available after the Windows build is published"><span aria-hidden="true">↓</span> <span>Windows app soon</span></span><PWAInstallButton /><button className="language-toggle" onClick={() => setLanguage(language === "en" ? "fr" : language === "fr" ? "ar" : "en")} aria-label={t.language}>{language === "en" ? "FR" : language === "fr" ? "العربية" : "EN"}</button><span className="live-indicator"><i/> {t.live}</span><span className="topbar-caption">{t.free}</span></div>
       </header>
 
       <div className="layout">

@@ -134,3 +134,33 @@ body{background:radial-gradient(ellipse at 70% -15%,#28214a 0,transparent 42%),#
 @media(min-width:1500px){.channel-grid,.loading-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.channel-grid,.loading-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.channel-main{min-height:82px;padding:11px 30px 11px 10px;gap:8px}.channel-logo{width:39px;height:39px}.channel-info strong{font-size:11px}.channel-info small{font-size:9px}}
 @media(max-width:420px){.channel-grid,.loading-grid{grid-template-columns:1fr}.channel-main{min-height:76px;padding:11px 34px 11px 11px}.channel-logo{width:43px;height:43px}.channel-info strong{font-size:12px}.channel-info small{font-size:10px}}
+
+/* Smart TV display mode: larger controls and a simplified 10-foot viewing layout. */
+.tv-mode .topbar{height:88px;padding:0 4vw}
+.tv-mode .brand{font-size:24px}
+.tv-mode .brand-mark{width:50px;height:50px}
+.tv-mode .layout{grid-template-columns:280px minmax(0,1fr);max-width:none}
+.tv-mode .sidebar{top:88px;height:calc(100vh - 88px);padding:34px 20px}
+.tv-mode .nav-item,.tv-mode .category-item{font-size:16px;padding:15px 14px;min-height:48px}
+.tv-mode .main-content{padding:42px 4vw 30px}
+.tv-mode .welcome-row h1{font-size:clamp(38px,3.2vw,58px)}
+.tv-mode .welcome-row p,.tv-mode .section-title-row p{font-size:15px}
+.tv-mode .video-wrap{aspect-ratio:16/9;max-height:70vh;min-height:320px}
+.tv-mode .player-topline{height:50px;font-size:13px}
+.tv-mode .player-meta{padding:18px 22px}
+.tv-mode .now-channel strong{font-size:17px}
+.tv-mode .now-channel small{font-size:13px}
+.tv-mode .channel-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.tv-mode .channel-card{min-height:86px}
+.tv-mode .channel-main{padding:16px;gap:14px}
+.tv-mode .channel-info strong{font-size:15px}
+.tv-mode .channel-info small{font-size:12px}
+.tv-mode .tv-mode-toggle{border-color:#8b5cf6;color:#d5c7ff}
+.tv-mode-toggle{display:flex;align-items:center;gap:7px;background:#171e2a;border:1px solid #30394a;border-radius:9px;color:#c7b5ff;padding:9px 11px;font-size:11px;white-space:nowrap}
+@media(max-width:760px){.tv-mode .layout{grid-template-columns:minmax(0,1fr)}.tv-mode .sidebar{display:none}.tv-mode .topbar{padding:0 14px}.tv-mode .topbar-caption{display:none}.tv-mode .topbar-right{gap:7px}.tv-mode .tv-mode-toggle span{display:none}}
+
+.windows-download-button{display:flex;align-items:center;gap:6px;background:#8b5cf6;color:white;border:1px solid #a78bfa;border-radius:9px;padding:9px 11px;font-size:11px;font-weight:700;white-space:nowrap}
+.windows-download-button:hover{background:#7545df}
+@media(max-width:900px){.windows-download-button span:last-child{display:none}}
+
+.windows-download-pending{opacity:.65;cursor:not-allowed;filter:saturate(.55)}

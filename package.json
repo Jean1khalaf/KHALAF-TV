@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "desktop:dev": "electron desktop/main.cjs",
+    "desktop:build": "electron-builder --win nsis"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -19,6 +21,28 @@
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.khalaftv.desktop",
+    "productName": "KHALAF TV",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
