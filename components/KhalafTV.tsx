@@ -162,15 +162,32 @@ export default function KhalafTV() {
     if ("note" in selected && !isDirectMedia(url)) return;
     let hls: Hls | null = null;
     video.pause(); video.muted = true; setIsMuted(true); setIsPlaying(false); video.removeAttribute("src"); video.load();
+    // A channel selected from the phone is not a browser user gesture, so
+    // start playback muted (the autoplay policy permits muted media). The
+    // viewer can unmute with either the TV or phone remote afterward.
+    const startPlayback = () => {
+      video.muted = true;
+      setIsMuted(true);
+      void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    };
     if (url.toLowerCase().includes(".m3u8") && Hls.isSupported()) {
       hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-      hls.loadSource(url); hls.attachMedia(video);
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = url;
+      hls.on(Hls.Events.MANIFEST_PARSED, startPlayback);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) setIsPlaying(false);
+      });
+      hls.loadSource(url);
+      hls.attachMedia(video);
     } else {
+      video.addEventListener("loadedmetadata", startPlayback, { once: true });
       video.src = url;
+      // Cached or very short media can already be ready when src is assigned.
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA) startPlayback();
     }
-    return () => { hls?.destroy(); };
+    return () => {
+      video.removeEventListener("loadedmetadata", startPlayback);
+      hls?.destroy();
+    };
   }, [selected]);
 
   const handleRemoteCommand = useCallback((command: Record<string, unknown>) => {
@@ -183,10 +200,16 @@ export default function KhalafTV() {
         }
         break;
       }
-      case "play": void video?.play().catch(() => {}); break;
-      case "pause": video?.pause(); break;
-      case "volume": if (video && typeof command.value === "number") video.volume = Math.max(0, Math.min(1, command.value / 100)); break;
-      case "mute": if (video) video.muted = !video.muted; break;
+      case "play":
+        if (video) void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        break;
+      case "pause": video?.pause(); setIsPlaying(false); break;
+      case "volume":
+        if (video && typeof command.value === "number") video.volume = Math.max(0, Math.min(1, command.value / 100));
+        break;
+      case "mute":
+        if (video) { video.muted = !video.muted; setIsMuted(video.muted); }
+        break;
       // A phone command is delivered over the network, so browsers reject the
       // Fullscreen API because it is not a direct user gesture. Use the app's
       // full-screen layout instead; it works reliably from the phone remote.
