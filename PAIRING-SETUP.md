@@ -30,3 +30,8 @@ Copy `.env.example` to `.env.local`, fill in the two required values, run `npm i
 - The QR code contains the temporary pairing code; treat it like a one-time credential.
 - Pairing sessions expire after ten minutes and old/expired rows are pruned when a new session is created.
 - Use HTTPS in production. For stricter abuse protection on public deployments, add rate limiting to the join endpoint at the edge/WAF.
+
+
+## Build compatibility note
+
+The Ably dependency is pinned to `2.9.0` rather than using a floating `^2.10.0` range to avoid the reported Next.js 15 SWC parsing failure in the newer bundled SDK. After extracting this ZIP, run `npm install` to regenerate `package-lock.json`, then run `npm run build`. If the same parser error persists, share the complete build log before changing permissions or exposing the API key.
