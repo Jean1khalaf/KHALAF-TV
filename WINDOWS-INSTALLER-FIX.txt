@@ -1,0 +1,12 @@
+KHALAF TV Windows installer fix
+
+Root cause fixed in this package:
+- The original project had no .github/workflows Windows build workflow.
+- The workflow now avoids npm cache setup because this project has no package-lock.json (that could stop the build before npm install).
+- Electron's package.json now declares desktop/main.cjs as its entry point.
+- The website endpoint checks the same stable release tag that the workflow publishes.
+- The release asset name is KHALAF-TV-Setup.exe.
+
+To activate it, upload/commit these project files to the default branch (main or master) of Jean1khalaf/KHALAF-TV. A push starts the Windows build automatically. Do not upload the ZIP file itself; upload the extracted files and preserve the .github/workflows directory.
+
+The first build still must succeed before the .exe can download. This ZIP cannot contain a genuine built Windows installer because it must be produced by the Windows build environment.
