@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2, Monitor, Smartphone } from "lucide-react";
+import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, VolumeX, Minimize2, Maximize2, Monitor, Smartphone, Pause } from "lucide-react";
 import PWAInstallButton from "./PWAInstallButton";
 import TVPairingPanel from "./TVPairingPanel";
 
@@ -93,6 +93,9 @@ export default function KhalafTV() {
   const [history, setHistory] = useState<string[]>([]);
   const [onlyHistory, setOnlyHistory] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoWrapRef = useRef<HTMLDivElement>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   async function loadChannels() {
     setLoading(true); setError("");
@@ -158,7 +161,7 @@ export default function KhalafTV() {
     const url = selected.url;
     if ("note" in selected && !isDirectMedia(url)) return;
     let hls: Hls | null = null;
-    video.pause(); video.removeAttribute("src"); video.load();
+    video.pause(); video.muted = true; setIsMuted(true); setIsPlaying(false); video.removeAttribute("src"); video.load();
     if (url.toLowerCase().includes(".m3u8") && Hls.isSupported()) {
       hls = new Hls({ enableWorker: true, lowLatencyMode: true });
       hls.loadSource(url); hls.attachMedia(video);
@@ -190,6 +193,65 @@ export default function KhalafTV() {
       case "fullscreen": setFullScreenPlayer(v => !v); break;
       case "disconnect": setShowPairing(false); break;
     }
+  }, []);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    const target = videoWrapRef.current;
+    if (!target) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setFullScreenPlayer(false);
+      } else if (fullScreenPlayer) {
+        setFullScreenPlayer(false);
+      } else if (target.requestFullscreen) {
+        await target.requestFullscreen();
+        setFullScreenPlayer(true);
+      } else {
+        setFullScreenPlayer(true);
+      }
+    } catch {
+      // iOS Safari and embedded contexts may not expose the Fullscreen API.
+      setFullScreenPlayer(v => !v);
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const sync = () => { setIsMuted(video.muted); setIsPlaying(!video.paused); };
+    video.addEventListener("volumechange", sync);
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    video.addEventListener("ended", sync);
+    const onFullscreen = () => setFullScreenPlayer(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFullscreen);
+    sync();
+    return () => {
+      video.removeEventListener("volumechange", sync);
+      video.removeEventListener("play", sync);
+      video.removeEventListener("pause", sync);
+      video.removeEventListener("ended", sync);
+      document.removeEventListener("fullscreenchange", onFullscreen);
+    };
   }, []);
 
   const countryName = (value?: string, channelName = "") => {

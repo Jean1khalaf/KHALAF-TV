@@ -178,3 +178,14 @@ body{background:radial-gradient(ellipse at 70% -15%,#28214a 0,transparent 42%),#
 .player-card-fullscreen .player-topline{flex-shrink:0}
 .fullscreen-close{display:inline-flex;align-items:center;gap:6px;border:1px solid #414b60;background:#1a2232;color:#f4f6fb;border-radius:8px;padding:7px 10px;font-size:11px}
 @media(max-width:760px){.player-card-fullscreen .player-topline{height:44px}.player-card-fullscreen .video-wrap{width:100%}.player-card-fullscreen .special-player{display:flex;flex:1;flex-direction:column;min-height:0}.player-card-fullscreen .special-player-heading{flex-shrink:0}.player-card-fullscreen .special-player-bottom{flex-shrink:0}}
+
+/* Responsive, touch-friendly native-player replacements for mobile browsers. */
+.video-controls{position:absolute;z-index:5;right:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px;border:1px solid #ffffff24;border-radius:14px;background:rgba(5,8,14,.84);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.video-controls button{display:flex;align-items:center;justify-content:center;width:46px;height:46px;min-width:46px;border:0;border-radius:10px;background:#202838;color:#fff;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background .15s,transform .15s}
+.video-controls button:active{background:#6d55d9;transform:scale(.96)}
+.video-controls button:focus-visible{outline:2px solid #b9a6ff;outline-offset:2px}
+.video-wrap:fullscreen{width:100vw;height:100vh;max-height:none;aspect-ratio:auto}
+.video-wrap:fullscreen video{object-fit:contain}
+.video-wrap:fullscreen .video-controls{right: max(12px, env(safe-area-inset-right));bottom:max(12px, env(safe-area-inset-bottom))}
+.player-card-fullscreen .video-controls{bottom:max(12px, env(safe-area-inset-bottom))}
+@media(max-width:600px){.video-wrap{min-height:220px;aspect-ratio:16/9}.video-controls{right:10px;bottom:10px;gap:6px;padding:5px}.video-controls button{width:48px;height:48px;min-width:48px}.video-caption{max-width:55%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;bottom:14px;left:10px}.player-card-fullscreen .video-wrap{min-height:0}.player-card-fullscreen .video-caption{display:none}}
