@@ -184,7 +184,10 @@ export default function KhalafTV() {
       case "pause": video?.pause(); break;
       case "volume": if (video && typeof command.value === "number") video.volume = Math.max(0, Math.min(1, command.value / 100)); break;
       case "mute": if (video) video.muted = !video.muted; break;
-      case "fullscreen": if (video?.parentElement) { if (document.fullscreenElement) void document.exitFullscreen(); else void video.parentElement.requestFullscreen().catch(() => {}); } break;
+      // A phone command is delivered over the network, so browsers reject the
+      // Fullscreen API because it is not a direct user gesture. Use the app's
+      // full-screen layout instead; it works reliably from the phone remote.
+      case "fullscreen": setFullScreenPlayer(v => !v); break;
       case "disconnect": setShowPairing(false); break;
     }
   }, []);
