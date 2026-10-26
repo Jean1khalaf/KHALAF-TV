@@ -197,3 +197,8 @@ The Windows download button uses `/api/download/windows`, so visitors remain on 
 The GitHub Actions workflow builds and publishes the installer automatically whenever source code is pushed to the `main` or `master` branch. No one needs to open Actions or click **Run workflow**. After the updated source is pushed and the first build succeeds, redeploy the website. The repository must be `KHALAF-TV/khalaf-tv` unless you also update the owner/repository constants in `app/api/download/windows/route.ts` and the workflow's release settings.
 
 Note: the source ZIP does not include a prebuilt Windows `.exe`. The first automatic Windows build must finish successfully before the website download endpoint can serve the installer. Once configured, future builds and releases are automatic.
+
+
+## Phone-to-TV Remote (Ably)
+
+See [PAIRING-SETUP.md](./PAIRING-SETUP.md) for setup, required environment variables, database migration, and pairing instructions.

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Hls from "hls.js";
-import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2, Monitor } from "lucide-react";
+import { Heart, Search, Radio, Menu, X, Play, Tv, Globe2, RefreshCw, ExternalLink, Volume2, Minimize2, Monitor, Smartphone } from "lucide-react";
 import PWAInstallButton from "./PWAInstallButton";
+import TVPairingPanel from "./TVPairingPanel";
 
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Special = { name: string; url: string; note: string };
@@ -88,6 +89,7 @@ export default function KhalafTV() {
   const [showSpecialNotice, setShowSpecialNotice] = useState(false);
   const [language, setLanguage] = useState<"en" | "fr" | "ar">("en");
   const [tvMode, setTvMode] = useState(false);
+  const [showPairing, setShowPairing] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [onlyHistory, setOnlyHistory] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -168,6 +170,25 @@ export default function KhalafTV() {
     return () => { hls?.destroy(); };
   }, [selected]);
 
+  const handleRemoteCommand = useCallback((command: Record<string, unknown>) => {
+    const video = videoRef.current;
+    switch (command.action) {
+      case "select": {
+        const next = command.channel as Channel | undefined;
+        if (next && typeof next.name === "string" && typeof next.url === "string") {
+          setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next);
+        }
+        break;
+      }
+      case "play": void video?.play().catch(() => {}); break;
+      case "pause": video?.pause(); break;
+      case "volume": if (video && typeof command.value === "number") video.volume = Math.max(0, Math.min(1, command.value / 100)); break;
+      case "mute": if (video) video.muted = !video.muted; break;
+      case "fullscreen": if (video?.parentElement) { if (document.fullscreenElement) void document.exitFullscreen(); else void video.parentElement.requestFullscreen().catch(() => {}); } break;
+      case "disconnect": setShowPairing(false); break;
+    }
+  }, []);
+
   const countryName = (value?: string, channelName = "") => {
     const raw = (value || "").split(/[;,]/)[0].trim();
     const codeMap: Record<string, string> = { CN: "China", CHN: "China", LB: "Lebanon", LBN: "Lebanon", FR: "France", FRA: "France", US: "United States", USA: "United States", GB: "United Kingdom", GBR: "United Kingdom", CA: "Canada", CAN: "Canada", AE: "United Arab Emirates", UAE: "United Arab Emirates", SA: "Saudi Arabia", KSA: "Saudi Arabia", EG: "Egypt", EGY: "Egypt", IQ: "Iraq", IR: "Iran", SY: "Syria", JO: "Jordan", TR: "Turkey", DE: "Germany", IT: "Italy", ES: "Spain", RU: "Russia", IN: "India", PK: "Pakistan", JP: "Japan", KR: "South Korea", AU: "Australia", BR: "Brazil", MX: "Mexico" };
@@ -226,7 +247,7 @@ export default function KhalafTV() {
       <header className="topbar">
         <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X/> : <Menu/>}</button>
         <a className="brand" href="#" aria-label="KHALAF TV home"><span className="brand-mark"><Tv size={22}/></span><span>KHALAF <b>TV</b><small>{t.tagline}</small></span></a>
-        <div className="topbar-right"><button className="tv-mode-toggle" onClick={() => setTvMode(v => !v)} title="Optimize for a Smart TV screen"><Monitor size={15}/><span>{tvMode ? "Exit TV mode" : "TV display"}</span></button><a className="windows-download-button" href="/api/download/windows" type="application/octet-stream" title="Download KHALAF TV for Windows"><span aria-hidden="true">↓</span> <span>Download for Windows</span></a><PWAInstallButton /><button className="language-toggle" onClick={() => setLanguage(language === "en" ? "fr" : language === "fr" ? "ar" : "en")} aria-label={t.language}>{language === "en" ? "FR" : language === "fr" ? "العربية" : "EN"}</button><span className="live-indicator"><i/> {t.live}</span><span className="topbar-caption">{t.free}</span></div>
+        <div className="topbar-right"><button className="tv-mode-toggle" onClick={() => setTvMode(v => !v)} title="Optimize for a Smart TV screen"><Monitor size={15}/><span>{tvMode ? "Exit TV mode" : "TV display"}</span></button><button className="tv-mode-toggle pairing-trigger" onClick={() => setShowPairing(true)} title="Pair a phone remote"><Smartphone size={15}/><span>Phone remote</span></button><a className="windows-download-button" href="/api/download/windows" type="application/octet-stream" title="Download KHALAF TV for Windows"><span aria-hidden="true">↓</span> <span>Download for Windows</span></a><PWAInstallButton /><button className="language-toggle" onClick={() => setLanguage(language === "en" ? "fr" : language === "fr" ? "ar" : "en")} aria-label={t.language}>{language === "en" ? "FR" : language === "fr" ? "العربية" : "EN"}</button><span className="live-indicator"><i/> {t.live}</span><span className="topbar-caption">{t.free}</span></div>
       </header>
 
       <div className="layout">
@@ -286,6 +307,7 @@ export default function KhalafTV() {
           <footer className="footer"><span>© {new Date().getFullYear()} KHALAF TV</span><span>{t.footer}</span></footer>
         </section>
       </div>
+      {showPairing && <TVPairingPanel onCommand={handleRemoteCommand} onClose={() => setShowPairing(false)} />}
     </main>
   );
 }
