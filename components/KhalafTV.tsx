@@ -194,9 +194,15 @@ export default function KhalafTV() {
     const video = videoRef.current;
     switch (command.action) {
       case "select": {
-        const next = command.channel as Channel | undefined;
-        if (next && typeof next.name === "string" && typeof next.url === "string") {
+        const requested = command.channel as Channel | undefined;
+        if (requested && typeof requested.name === "string" && typeof requested.url === "string") {
+          // Resolve remote selections to the curated entry so special channels always use the iframe player.
+          const specialKey = canonicalSpecial(requested.name);
+          const next = specialKey
+            ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested
+            : requested;
           setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next);
+          setFullScreenPlayer(true);
         }
         break;
       }

@@ -4,13 +4,31 @@ import * as Ably from "ably";
 import { Pause, Play, Volume2, Tv, Power, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Joined = { sessionId: string; channel: string; phoneSecret: string };
+const SPECIAL_CHANNELS: Channel[] = [
+  { name: "MTV Lebanon", url: process.env.NEXT_PUBLIC_MTV_LEBANON_STREAM || process.env.NEXT_PUBLIC_MTV_LEBANON_EMBED || "https://www.elahmad.ru/tv/mtvlebanon.htm", country: "Lebanon", group: "Lebanese TV" },
+  { name: "LBC Lebanon", url: process.env.NEXT_PUBLIC_LBC_LEBANON_STREAM || process.env.NEXT_PUBLIC_LBC_LEBANON_EMBED || "https://www.elahmad.ru/tv/lbc.php", country: "Lebanon", group: "Lebanese TV" },
+  { name: "Al Jadeed Lebanon", url: process.env.NEXT_PUBLIC_JADEED_LEBANON_STREAM || process.env.NEXT_PUBLIC_JADEED_LEBANON_EMBED || "https://www.elahmad.ru/tv/newtv.php", country: "Lebanon", group: "Lebanese TV" },
+  { name: "Al Hadath", url: process.env.NEXT_PUBLIC_AL_HADATH_STREAM || process.env.NEXT_PUBLIC_AL_HADATH_EMBED || "https://www.elahmad.ru/tv/alarabiya_alhadath.php", country: "Saudi Arabia", group: "News · Live TV" },
+];
+const canonicalSpecial = (name: string) => {
+  const n = name.normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  if (/\b(al )?hadath\b|alarabiya.*hadath/.test(n)) return "al hadath";
+  if (/\bmtv\b/.test(n)) return "mtv lebanon";
+  if (/\blbc\b/.test(n)) return "lbc lebanon";
+  if (/\b(al )?jadeed\b/.test(n)) return "al jadeed lebanon";
+  return null;
+};
 export default function RemoteClient() {
   const [code, setCode] = useState(""); const [joined, setJoined] = useState<Joined | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]); const [selected, setSelected] = useState("");
   const [status, setStatus] = useState("Enter the code shown on your TV."); const [error, setError] = useState("");
   const clientRef = useRef<Ably.Realtime | null>(null); const channelRef = useRef<Ably.RealtimeChannel | null>(null); const commandSeq = useRef(0);
   const [volume, setVolume] = useState(80); const [playing, setPlaying] = useState(true); const [muted, setMuted] = useState(false); const [remoteFullscreen, setRemoteFullscreen] = useState(false); const [query, setQuery] = useState("");
-  useEffect(() => { const c = new URLSearchParams(location.search).get("code"); if (c) setCode(c); fetch("/api/channels").then(r=>r.json()).then(d=>setChannels(Array.isArray(d.channels)?d.channels:[])).catch(()=>{}); }, []);
+  useEffect(() => { const c = new URLSearchParams(location.search).get("code"); if (c) setCode(c); fetch("/api/channels").then(r=>r.json()).then(d=>{
+    const playlist = Array.isArray(d.channels) ? d.channels as Channel[] : [];
+    const regular = playlist.filter(c => !canonicalSpecial(c.name));
+    setChannels([...SPECIAL_CHANNELS, ...regular]);
+  }).catch(()=>setChannels(SPECIAL_CHANNELS)); }, []);
   useEffect(() => {
     if (!joined) return;
     const client = new Ably.Realtime({ authUrl: "/api/pairing/token", authMethod: "POST", authParams: { sessionId: joined.sessionId, role: "phone", secret: joined.phoneSecret }, autoConnect: true });
