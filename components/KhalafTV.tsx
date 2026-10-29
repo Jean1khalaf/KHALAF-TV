@@ -387,14 +387,22 @@ export default function KhalafTV() {
                   </div>
                   <a className="secondary-button" href={selectedUrl} target="_blank" rel="noopener"><ExternalLink size={15}/> {t.source}</a>
                 </div>
-                {showSpecialNotice && <div className="embed-notice">{t.sourceWarning}</div>}
-                <div className="source-frame-wrap">
-                  <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="unsafe-url" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
-                  <div className="source-watermark">KHALAF <b>TV</b></div>
+                <div className="embed-notice">{t.sourceWarning}</div>
+                <div className="source-fallback-panel">
+                  <div className="source-fallback-icon"><ExternalLink size={30}/></div>
+                  <strong>{selectedName}</strong>
+                  <p>{language === "fr"
+                    ? "Ce fournisseur ne permet pas l’intégration de sa page dans KHALAF TV. Ouvrez son lecteur officiel dans un nouvel onglet."
+                    : language === "ar"
+                    ? "مزود البث لا يسمح بعرض صفحته داخل KHALAF TV. افتح المشغل الرسمي في علامة تبويب جديدة."
+                    : "This provider does not allow its webpage to be embedded in KHALAF TV. Open the provider's page in a new tab to watch there."}</p>
+                  <a className="source-fallback-action" href={selectedUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink size={16}/> {t.sourceFallback}
+                  </a>
                 </div>
                 <div className="special-player-bottom">
                   <span><i className="red-dot"/> {t.sourceTitle.toUpperCase()}</span>
-                  <button className="source-help" onClick={() => setShowSpecialNotice(!showSpecialNotice)}>{showSpecialNotice ? t.hideInfo : t.sourceHelp}</button>
+                  <span>{language === "fr" ? "Lecteur externe" : language === "ar" ? "مشغل خارجي" : "External player"}</span>
                 </div>
               </div>
             ) : (
