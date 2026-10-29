@@ -5,7 +5,15 @@ import { QRCodeSVG } from "qrcode.react";
 import { Link2, Smartphone, X, RefreshCw } from "lucide-react";
 
 type PairingSession = { sessionId: string; code: string; tvSecret: string; channel: string; expiresIn: number };
-type Props = { onCommand: (command: Record<string, unknown>) => void; onClose: () => void };
+type CommandResult = { ok: boolean; action: string; message?: string };
+type Props = { onCommand: (command: Record<string, unknown>) => CommandResult; onClose: () => void };
+async function publishStatus(channel: Ably.RealtimeChannel) {
+  const video = document.querySelector("video");
+  const title = document.querySelector(".player-meta .now-channel strong, .video-caption span:last-child, .special-title")?.textContent || "";
+  const channelName = title.trim().slice(0, 80);
+  await channel.publish("status", { type: "tv-status", channelName, playing: video ? !video.paused : undefined, volume: video ? Math.round(video.volume * 100) : undefined, muted: video?.muted, currentTime: video && Number.isFinite(video.currentTime) ? video.currentTime : undefined, duration: video && Number.isFinite(video.duration) ? video.duration : undefined, fullscreen: Boolean(document.fullscreenElement) });
+}
+
 export default function TVPairingPanel({ onCommand, onClose }: Props) {
   const [session, setSession] = useState<PairingSession | null>(null);
   const [status, setStatus] = useState("Creating a secure pairing code…");
@@ -27,12 +35,15 @@ export default function TVPairingPanel({ onCommand, onClose }: Props) {
     const onConnected = () => setStatus("Waiting for your phone to connect");
     const onMessage = (message: Ably.Message) => {
       const data = message.data as Record<string, unknown>;
-      if (data?.type === "phone-connected") setStatus("Phone connected · remote is ready");
+      if (data?.type === "phone-connected") { setStatus("Phone connected · remote is ready"); void publishStatus(channel); }
       else if (data?.type === "remote-command") {
         try {
-          onCommand(data.command as Record<string, unknown>);
-          void channel.publish("status", { type: "command-ack", commandId: data.commandId, receivedAt: Date.now() });
-          setStatus("Phone connected · last command received");
+          const command = data.command as Record<string, unknown>;
+          const result = onCommand(command);
+          void channel.publish("status", { type: "command-ack", commandId: data.commandId, receivedAt: Date.now(), ...result });
+          setStatus(result.ok ? "Phone connected · command confirmed" : `Command unavailable · ${result.message || result.action}`);
+          void publishStatus(channel);
+          if (command.action === "disconnect") void closeSession();
         } catch {
           setError("The TV received a command but could not apply it.");
         }
@@ -46,18 +57,25 @@ export default function TVPairingPanel({ onCommand, onClose }: Props) {
     client.connection.on("connected", onConnected);
     client.connection.on("failed", () => setError("Ably connection failed. Check your API key and network."));
     let cancelled = false;
+    const statusTimer = setInterval(() => { if (client.connection.state === "connected") void publishStatus(channel); }, 2500);
     void channel.attach().then(() => {
-      if (!cancelled) setStatus("Waiting for your phone to connect");
+      if (!cancelled) { setStatus("Waiting for your phone to connect"); void publishStatus(channel); }
     }).catch(() => {
       if (!cancelled) setError("TV could not subscribe to remote commands. Check Ably channel permissions and network.");
     });
-    return () => { cancelled = true; channel.unsubscribe(); client.close(); };
+    return () => { cancelled = true; clearInterval(statusTimer); channel.unsubscribe(); client.close(); };
   }, [session, onCommand]);
+  async function closeSession() {
+    if (session) {
+      try { await fetch("/api/pairing/close", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: session.sessionId, secret: session.tvSecret, role: "tv" }) }); } catch {}
+    }
+    onClose();
+  }
   const remoteUrl = typeof window !== "undefined" ? `${window.location.origin}/remote` : "/remote";
   const qrValue = `${remoteUrl}?code=${session?.code || ""}`;
   return <div className="pairing-overlay" role="dialog" aria-modal="true" aria-label="Pair phone remote">
     <section className="pairing-dialog">
-      <button className="pairing-close" onClick={onClose} aria-label="Close pairing"><X size={20}/></button>
+      <button className="pairing-close" onClick={() => void closeSession()} aria-label="Close pairing"><X size={20}/></button>
       <div className="pairing-kicker"><Smartphone size={17}/> PHONE REMOTE</div>
       <h2>Pair your phone with KHALAF TV</h2>
       <p className="pairing-description">Scan the QR code or open the remote page on your phone and enter this code. The code expires in 10 minutes.</p>

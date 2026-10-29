@@ -190,37 +190,55 @@ export default function KhalafTV() {
     };
   }, [selected]);
 
-  const handleRemoteCommand = useCallback((command: Record<string, unknown>) => {
+  const handleRemoteCommand = useCallback((command: Record<string, unknown>): { ok: boolean; action: string; message?: string } => {
     const video = videoRef.current;
-    switch (command.action) {
+    const action = typeof command.action === "string" ? command.action : "unknown";
+    switch (action) {
       case "select": {
         const requested = command.channel as Channel | undefined;
-        if (requested && typeof requested.name === "string" && typeof requested.url === "string") {
-          // Resolve remote selections to the curated entry so special channels always use the iframe player.
-          const specialKey = canonicalSpecial(requested.name);
-          const next = specialKey
-            ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested
-            : requested;
-          setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next);
-          setFullScreenPlayer(true);
-        }
-        break;
+        if (!requested || typeof requested.name !== "string" || typeof requested.url !== "string") return { ok: false, action, message: "Chaîne invalide." };
+        const specialKey = canonicalSpecial(requested.name);
+        const next = specialKey ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested : requested;
+        setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next); setFullScreenPlayer(true);
+        return { ok: true, action };
       }
       case "play":
-        if (video) void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
-        break;
-      case "pause": video?.pause(); setIsPlaying(false); break;
+        if (!video) return { ok: false, action, message: "Le lecteur vidéo natif n'est pas actif pour cette chaîne." };
+        void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        return { ok: true, action };
+      case "pause":
+        if (!video) return { ok: false, action, message: "Le lecteur vidéo natif n'est pas actif pour cette chaîne." };
+        video.pause(); setIsPlaying(false); return { ok: true, action };
       case "volume":
-        if (video && typeof command.value === "number") video.volume = Math.max(0, Math.min(1, command.value / 100));
-        break;
+        if (!video || typeof command.value !== "number" || !Number.isFinite(command.value)) return { ok: false, action, message: "Volume indisponible pour ce lecteur." };
+        video.volume = Math.max(0, Math.min(1, command.value / 100)); return { ok: true, action };
       case "mute":
-        if (video) { video.muted = !video.muted; setIsMuted(video.muted); }
-        break;
-      // A phone command is delivered over the network, so browsers reject the
-      // Fullscreen API because it is not a direct user gesture. Use the app's
-      // full-screen layout instead; it works reliably from the phone remote.
-      case "fullscreen": setFullScreenPlayer(v => !v); break;
-      case "disconnect": setShowPairing(false); break;
+        if (!video) return { ok: false, action, message: "Son indisponible pour ce lecteur." };
+        video.muted = !video.muted; setIsMuted(video.muted); return { ok: true, action };
+      case "seek":
+        if (!video || !Number.isFinite(command.value) || !Number.isFinite(video.duration)) return { ok: false, action, message: "Recherche temporelle indisponible pour ce lecteur." };
+        video.currentTime = Math.max(0, Math.min(video.duration, Number(command.value))); return { ok: true, action };
+      case "key": {
+        const allowed = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Escape", "Home", "Backspace", "Delete", "Tab"]);
+        if (typeof command.key !== "string" || !allowed.has(command.key)) return { ok: false, action, message: "Touche non autorisée." };
+        const target = document.activeElement instanceof HTMLElement ? document.activeElement : document.body;
+        target.dispatchEvent(new KeyboardEvent("keydown", { key: command.key, bubbles: true, cancelable: true }));
+        target.dispatchEvent(new KeyboardEvent("keyup", { key: command.key, bubbles: true, cancelable: true }));
+        return { ok: true, action };
+      }
+      case "text": {
+        if (typeof command.value !== "string" || command.value.length > 300) return { ok: false, action, message: "Texte invalide." };
+        const target = document.activeElement;
+        if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) || target.disabled || target.readOnly) return { ok: false, action, message: "Cliquez d'abord dans un champ de saisie sur la TV." };
+        const setter = Object.getOwnPropertyDescriptor(target instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value")?.set;
+        setter?.call(target, target.value + command.value);
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+        return { ok: true, action };
+      }
+      case "fullscreen": setFullScreenPlayer(v => !v); return { ok: true, action };
+      case "disconnect": return { ok: true, action };
+      default: return { ok: false, action, message: "Commande inconnue." };
     }
   }, []);
 
