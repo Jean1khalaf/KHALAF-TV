@@ -35,7 +35,7 @@ const COPY = {
     listed: "channels listed", now: "NOW PLAYING", liveBadge: "LIVE", source: "Open source",
     sourceTitle: "Source player", sourceHelp: "Why doesn't it fit?", hideInfo: "Hide info",
     sourceWarning: "This provider page may block embedding or show its own banners and controls. KHALAF TV cannot remove content inside a third-party page. For a clean native player, configure an authorized direct stream URL or official embeddable player.",
-    sourceFallback: "Open provider page", choose: "Choose a channel to start watching", chooseHint: "Select a channel from the list below.",
+    sourceFallback: "Open provider page", returnToDirectory: "Choose another channel", blockedTitle: "This provider does not allow its webpage to be embedded in KHALAF TV.", blockedHelp: "Open the provider in a new tab to watch. KHALAF TV will stay open in this tab, so you can return here and choose another channel.", returnHint: "When you are finished, switch back to the KHALAF TV tab in your browser or use this button to choose another channel.", choose: "Choose a channel to start watching", chooseHint: "Select a channel from the list below.",
     external: "Lebanese TV · External source", addFavorite: "Add favorite", saved: "Saved",
     explore: "Explore channels", loading: "Loading the public playlist…", toExplore: "channels to explore",
     search: "Search channels, countries…", stream: "Live streams", refresh: "Refresh", noResults: "No channels found",
@@ -50,7 +50,7 @@ const COPY = {
     listed: "قناة", now: "يُعرض الآن", liveBadge: "مباشر", source: "فتح المصدر",
     sourceTitle: "مشغل المصدر", sourceHelp: "لماذا لا يظهر بشكل مناسب؟", hideInfo: "إخفاء المعلومات",
     sourceWarning: "قد يمنع مزوّد البث تضمين صفحته أو يعرض إعلانات وعناصر تحكم خاصة به. لا يستطيع KHALAF TV إزالة المحتوى داخل صفحة خارجية. للحصول على مشغل مباشر نظيف، أضف رابط بث مباشر مصرحاً به أو مشغلاً رسمياً قابلاً للتضمين.",
-    sourceFallback: "فتح صفحة المزوّد", choose: "اختر قناة لبدء المشاهدة", chooseHint: "اختر قناة من القائمة أدناه.",
+    sourceFallback: "فتح صفحة المزوّد", returnToDirectory: "اختر قناة أخرى", blockedTitle: "لا يسمح هذا المزوّد بتضمين صفحة الويب داخل KHALAF TV.", blockedHelp: "افتح المزوّد في علامة تبويب جديدة للمشاهدة. سيبقى KHALAF TV مفتوحاً في علامة التبويب الحالية لتتمكن من العودة واختيار قناة أخرى.", returnHint: "عند الانتهاء، ارجع إلى علامة تبويب KHALAF TV في المتصفح أو استخدم هذا الزر لاختيار قناة أخرى.", choose: "اختر قناة لبدء المشاهدة", chooseHint: "اختر قناة من القائمة أدناه.",
     external: "تلفزيون لبناني · مصدر خارجي", addFavorite: "أضف للمفضلة", saved: "تم الحفظ",
     explore: "استكشف القنوات", loading: "جارٍ تحميل قائمة القنوات…", toExplore: "قناة للاستكشاف",
     search: "ابحث عن قناة أو بلد…", stream: "بث مباشر", refresh: "تحديث", noResults: "لم يتم العثور على قنوات",
@@ -65,7 +65,7 @@ const COPY = {
     listed: "chaînes disponibles", now: "EN COURS", liveBadge: "DIRECT", source: "Ouvrir la source",
     sourceTitle: "Lecteur externe", sourceHelp: "Pourquoi cet affichage ?", hideInfo: "Masquer les infos",
     sourceWarning: "Le fournisseur peut bloquer l’intégration ou afficher ses propres publicités et commandes. KHALAF TV ne peut pas retirer le contenu d’une page tierce. Pour un lecteur intégré propre, configurez un flux direct autorisé ou un lecteur officiel.",
-    sourceFallback: "Ouvrir la page du fournisseur", choose: "Choisissez une chaîne", chooseHint: "Sélectionnez une chaîne ci-dessous pour commencer.",
+    sourceFallback: "Ouvrir la page du fournisseur", returnToDirectory: "Choisir une autre chaîne", blockedTitle: "Ce fournisseur n’autorise pas l’intégration de sa page dans KHALAF TV.", blockedHelp: "Ouvrez le fournisseur dans un nouvel onglet pour regarder la chaîne. KHALAF TV restera ouvert dans cet onglet pour vous permettre de revenir et de choisir une autre chaîne.", returnHint: "Lorsque vous avez terminé, revenez à l’onglet KHALAF TV de votre navigateur ou utilisez ce bouton pour choisir une autre chaîne.", choose: "Choisissez une chaîne", chooseHint: "Sélectionnez une chaîne ci-dessous pour commencer.",
     external: "Télévision libanaise · Source externe", addFavorite: "Ajouter aux favoris", saved: "Enregistré",
     explore: "Explorer les chaînes", loading: "Chargement de la playlist publique…", toExplore: "chaînes à découvrir",
     search: "Rechercher une chaîne, un pays…", stream: "Flux en direct", refresh: "Actualiser", noResults: "Aucune chaîne trouvée",
@@ -387,22 +387,25 @@ export default function KhalafTV() {
                   </div>
                   <a className="secondary-button" href={selectedUrl} target="_blank" rel="noopener"><ExternalLink size={15}/> {t.source}</a>
                 </div>
-                <div className="embed-notice">{t.sourceWarning}</div>
-                <div className="source-fallback-panel">
-                  <div className="source-fallback-icon"><ExternalLink size={30}/></div>
-                  <strong>{selectedName}</strong>
-                  <p>{language === "fr"
-                    ? "Ce fournisseur ne permet pas l’intégration de sa page dans KHALAF TV. Ouvrez son lecteur officiel dans un nouvel onglet."
-                    : language === "ar"
-                    ? "مزود البث لا يسمح بعرض صفحته داخل KHALAF TV. افتح المشغل الرسمي في علامة تبويب جديدة."
-                    : "This provider does not allow its webpage to be embedded in KHALAF TV. Open the provider's page in a new tab to watch there."}</p>
-                  <a className="source-fallback-action" href={selectedUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink size={16}/> {t.sourceFallback}
-                  </a>
-                </div>
-                <div className="special-player-bottom">
-                  <span><i className="red-dot"/> {t.sourceTitle.toUpperCase()}</span>
-                  <span>{language === "fr" ? "Lecteur externe" : language === "ar" ? "مشغل خارجي" : "External player"}</span>
+                <div className="provider-fallback" role="status" aria-live="polite">
+                  <div className="provider-fallback-icon"><ExternalLink size={26}/></div>
+                  <h3>{t.blockedTitle}</h3>
+                  <p>{t.blockedHelp}</p>
+                  <div className="provider-fallback-actions">
+                    <a className="provider-open-button" href={selectedUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={16}/>{t.sourceFallback}
+                    </a>
+                    <button className="provider-return-button" onClick={() => {
+                      setFullScreenPlayer(false);
+                      setSelected(null);
+                      setShowSpecialNotice(false);
+                      setMobileMenu(false);
+                      window.setTimeout(() => document.getElementById("channels-directory")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+                    }}>
+                      <Tv size={16}/>{t.returnToDirectory}
+                    </button>
+                  </div>
+                  <small>{t.returnHint}</small>
                 </div>
               </div>
             ) : (
@@ -416,7 +419,7 @@ export default function KhalafTV() {
             <div className="player-meta"><div className="now-channel">{selectedLogo ? <img src={selectedLogo} alt="" onError={e => (e.currentTarget.style.display = "none")}/> : <span className="channel-placeholder"><Tv size={20}/></span>}<div><strong>{selectedName}</strong><small>{isSpecial ? t.external : (selected && "group" in selected ? selected.group : t.live)}</small></div></div>{selected && <button className={`favorite-button ${favorites.includes(selected.name) ? "favorited" : ""}`} onClick={() => toggleFavorite(selected.name)} aria-label="Toggle favorite"><Heart size={17} fill={favorites.includes(selected.name) ? "currentColor" : "none"}/>{favorites.includes(selected.name) ? t.saved : t.addFavorite}</button>}</div>
           </div>
 
-          <div className="channels-section">
+          <div className="channels-section" id="channels-directory">
             <div className="section-title-row"><div><h2>{onlyFavorites ? t.favorites : onlyHistory ? t.history : category === "All countries" ? t.explore : category}</h2><p>{loading ? t.loading : `${filtered.length.toLocaleString()} ${t.toExplore}`}</p></div><button className="refresh-button" onClick={loadChannels} title="Refresh channel list"><RefreshCw size={16}/><span>{t.refresh}</span></button></div>
             <div className="search-row"><div className="search-box"><Search size={18}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder={t.search} aria-label={t.search}/>{query && <button onClick={() => setQuery("")} aria-label="Clear search"><X size={16}/></button>}</div><div className="filter-pill"><Volume2 size={15}/><span>{t.stream}</span></div></div>
             {error && <div className="error-box">{error}<button onClick={loadChannels}>{t.retry}</button></div>}
