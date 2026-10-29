@@ -22,7 +22,7 @@ const isDirectMedia = (url: string) => /\.(m3u8|mp4|webm|mpd)(\?|#|$)/i.test(url
 const canonicalSpecial = (name: string) => {
   const n = name.normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
   if (/\b(al )?hadath\b|alarabiya.*hadath/.test(n)) return "al hadath";
-  if (/\bmtv\b/.test(n) && (n.includes("lebanon") || /\bmtv\b/.test(n))) return "mtv lebanon";
+  if (/\bmtv\b/.test(n) && /\blebanon\b|\blebanese\b/.test(n)) return "mtv lebanon";
   if (/\blbc\b/.test(n)) return "lbc lebanon";
   if (/\b(al )?jadeed\b/.test(n)) return "al jadeed lebanon";
   return null;
