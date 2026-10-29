@@ -389,7 +389,7 @@ export default function KhalafTV() {
                 </div>
                 {showSpecialNotice && <div className="embed-notice">{t.sourceWarning}</div>}
                 <div className="source-frame-wrap">
-                  <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="unsafe-url" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" />
+                  <iframe className="source-frame" src={selectedUrl} title={selectedName} referrerPolicy="unsafe-url" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
                   <div className="source-watermark">KHALAF <b>TV</b></div>
                 </div>
                 <div className="special-player-bottom">
