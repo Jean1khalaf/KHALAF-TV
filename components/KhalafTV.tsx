@@ -157,13 +157,38 @@ export default function KhalafTV() {
       const result = await desktopBridge.closeProvider();
       return result.ok;
     }
+
+    // Browsers only allow a remote command to open a new window after a
+    // user gesture. Keep the user-authorized popup alive so the phone remote
+    // can continue controlling providers without requiring another TV click.
     const popup = providerWindowRef.current;
-    if (popup && !popup.closed) popup.close();
+    if (popup && !popup.closed) {
+      try {
+        popup.location.href = "about:blank";
+        popup.document.title = "KHALAF TV · Provider";
+        popup.document.body.innerHTML =
+          "<div style='font:16px Arial;padding:32px;background:#080b12;color:#fff'>" +
+          "<h2 style='margin-top:0'>KHALAF TV remote channel window</h2>" +
+          "<p>Ready. Choose a channel from your KHALAF TV remote.</p></div>";
+      } catch {
+        // Even if the browser blocks access to the blank page, retain the
+        // window handle and let the next provider command report any failure.
+      }
+      setProviderTabUrl("");
+      setProviderTabReady(!popup.closed);
+      setProviderTabMessage(
+        popup.closed
+          ? "Provider window was closed by the browser. Click Enable once on the TV to reconnect."
+          : "Provider closed. Remote control remains enabled."
+      );
+      return !popup.closed;
+    }
+
     providerWindowRef.current = null;
     setProviderTabUrl("");
     setProviderTabReady(false);
-    setProviderTabMessage("Provider tab closed.");
-    return true;
+    setProviderTabMessage("Provider window is no longer available. Click Enable once on the TV to reconnect.");
+    return false;
   }
 
   async function loadChannels() {

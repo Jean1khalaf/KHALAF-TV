@@ -30,3 +30,8 @@ The Electron app exposes a narrow preload bridge. The phone's paired command can
 ## Test checklist
 - Web: click Enable remote channel tab on the TV once; select each of the four channels from phone; close from phone; select another channel.
 - Electron: pair phone; select each channel; verify prior provider window closes; use Close provider tab; verify main KHALAF TV window remains.
+
+
+## Keep remote control enabled after closing a provider
+
+In browser mode, **Close provider tab** now navigates the already-authorized provider window to a blank KHALAF TV standby page instead of destroying the window. This preserves the browser's user-gesture authorization, so the phone can open the next provider without another click on the TV. Browsers do not permit scripts to close and then silently reopen arbitrary tabs from a remote command. In the Windows desktop app, the desktop bridge continues to manage its provider window.
