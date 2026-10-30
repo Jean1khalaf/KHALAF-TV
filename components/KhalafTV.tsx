@@ -158,32 +158,29 @@ export default function KhalafTV() {
       return result.ok;
     }
 
-    // In a normal browser we cannot hide/minimize another window from a
-    // remote command. Navigate the already-authorized popup to a dark standby
-    // page (rather than leaving the white about:blank page visible) and reuse
-    // it for the next provider.
+    // Browsers only allow a remote command to open a new window after a
+    // user gesture. Keep the user-authorized popup alive so the phone remote
+    // can continue controlling providers without requiring another TV click.
     const popup = providerWindowRef.current;
     if (popup && !popup.closed) {
       try {
-        popup.addEventListener("load", () => {
-          try {
-            popup.document.open();
-            popup.document.write(
-              "<!doctype html><html><head><meta charset='utf-8'><title>KHALAF TV · Standby</title>" +
-              "<meta name='viewport' content='width=device-width,initial-scale=1'>" +
-              "<style>html,body{margin:0;width:100%;height:100%;background:#080b12;color:#e8eaf2;font:16px Arial,sans-serif}" +
-              "main{box-sizing:border-box;min-height:100%;display:grid;place-content:center;text-align:center;padding:32px}" +
-              "p{color:#aab1c5}</style></head><body><main><h2>KHALAF TV</h2>" +
-              "<p>Provider closed · Choose another channel using your remote.</p></main></body></html>"
-            );
-            popup.document.close();
-          } catch {}
-        }, { once: true });
-        popup.location.replace("about:blank");
-      } catch {}
+        popup.location.href = "about:blank";
+        popup.document.title = "KHALAF TV · Provider";
+        popup.document.body.innerHTML =
+          "<div style='font:16px Arial;padding:32px;background:#080b12;color:#fff'>" +
+          "<h2 style='margin-top:0'>KHALAF TV remote channel window</h2>" +
+          "<p>Ready. Choose a channel from your KHALAF TV remote.</p></div>";
+      } catch {
+        // Even if the browser blocks access to the blank page, retain the
+        // window handle and let the next provider command report any failure.
+      }
       setProviderTabUrl("");
       setProviderTabReady(!popup.closed);
-      setProviderTabMessage("Provider closed. The authorized window is ready for the next channel.");
+      setProviderTabMessage(
+        popup.closed
+          ? "Provider window was closed by the browser. Click Enable once on the TV to reconnect."
+          : "Provider closed. Remote control remains enabled."
+      );
       return !popup.closed;
     }
 
@@ -192,6 +189,286 @@ export default function KhalafTV() {
     setProviderTabReady(false);
     setProviderTabMessage("Provider window is no longer available. Click Enable once on the TV to reconnect.");
     return false;
+  }
+
+  async function loadChannels() {
+    setLoading(true); setError("");
+    try {
+      const res = await fetch("/api/channels");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to load channels");
+      const list: Channel[] = data.channels || [];
+      setChannels(list);
+      if (!selected && list.length) setSelected(list[0]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load channels");
+    } finally { setLoading(false); }
+  }
+
+  // Enable TV layout from ?tv=1 so Android TV users can bookmark a direct TV-mode URL.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      setTvMode(params.get("tv") === "1");
+    } catch {}
+  }, []);
+
+  // Android TV remotes often emit arrow/OK keys. Keep focus visible and allow
+  // directional movement through interactive controls when TV mode is active.
+  useEffect(() => {
+    if (!tvMode) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)) return;
+      const target = event.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      const items = Array.from(document.querySelectorAll<HTMLElement>(
+        '.tv-mode button:not(:disabled), .tv-mode a[href], .tv-mode input:not(:disabled)'
+      )).filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement as HTMLElement);
+      const delta = (event.key === "ArrowDown" || event.key === "ArrowRight") ? 1 : -1;
+      const next = current < 0 ? 0 : (current + delta + items.length) % items.length;
+      event.preventDefault();
+      items[next]?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [tvMode]);
+
+  useEffect(() => {
+    try { setHistory(JSON.parse(localStorage.getItem("khalaf-history") || "[]")); } catch {}
+    loadChannels();
+    fetch("/api/favorites").then(r => r.json()).then(d => {
+      if (d.enabled && Array.isArray(d.favorites)) setFavorites(d.favorites);
+      else {
+        try { setFavorites(JSON.parse(localStorage.getItem("khalaf-favorites") || "[]")); } catch {}
+      }
+    }).catch(() => {
+      try { setFavorites(JSON.parse(localStorage.getItem("khalaf-favorites") || "[]")); } catch {}
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !selected) return;
+    const url = selected.url;
+    if ("note" in selected && !isDirectMedia(url)) return;
+    let hls: Hls | null = null;
+    video.pause(); video.muted = true; setIsMuted(true); setIsPlaying(false); video.removeAttribute("src"); video.load();
+    // A channel selected from the phone is not a browser user gesture, so
+    // start playback muted (the autoplay policy permits muted media). The
+    // viewer can unmute with either the TV or phone remote afterward.
+    const startPlayback = () => {
+      video.muted = true;
+      setIsMuted(true);
+      void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    };
+    if (url.toLowerCase().includes(".m3u8") && Hls.isSupported()) {
+      hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+      hls.on(Hls.Events.MANIFEST_PARSED, startPlayback);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) setIsPlaying(false);
+      });
+      hls.loadSource(url);
+      hls.attachMedia(video);
+    } else {
+      video.addEventListener("loadedmetadata", startPlayback, { once: true });
+      video.src = url;
+      // Cached or very short media can already be ready when src is assigned.
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA) startPlayback();
+    }
+    return () => {
+      video.removeEventListener("loadedmetadata", startPlayback);
+      hls?.destroy();
+    };
+  }, [selected]);
+
+  const handleRemoteCommand = useCallback(async (command: Record<string, unknown>): Promise<{ ok: boolean; action: string; message?: string }> => {
+    const video = videoRef.current;
+    const action = typeof command.action === "string" ? command.action : "unknown";
+    switch (action) {
+      case "open-provider-tab": {
+        const current = selectedRef.current;
+        // Remote channel selection can arrive as a plain Channel object (without
+        // the UI-only `note` field). Identify provider channels by their name too.
+        const isProviderChannel = !!current && (!!canonicalSpecial(current.name) || "note" in current);
+        if (!current || !isProviderChannel || isDirectMedia(current.url)) {
+          return { ok: false, action, message: "Select MTV Lebanon, LBC Lebanon, Al Jadeed, or Al Hadath first." };
+        }
+        if (window.khalafDesktop?.isDesktop) {
+          try {
+            const result = await window.khalafDesktop.openProvider(current.url);
+            return result.ok ? { ok: true, action, message: "Provider window opened." } : { ok: false, action, message: result.message || "Could not open provider window." };
+          } catch {
+            return { ok: false, action, message: "Could not open provider window. Please try again on the TV." };
+          }
+        }
+        const opened = await openRemoteProvider(current.url);
+        return opened
+          ? { ok: true, action, message: "Provider tab opened." }
+          : { ok: false, action, message: "On the TV, click Enable remote channel tab first and allow pop-ups, then try again." };
+      }
+      case "select": {
+        const requested = command.channel as Channel | undefined;
+        if (!requested || typeof requested.name !== "string" || typeof requested.url !== "string") return { ok: false, action, message: "Chaîne invalide." };
+        const specialKey = canonicalSpecial(requested.name);
+        const next = specialKey ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested : requested;
+        setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next); setFullScreenPlayer(true);
+        if ("note" in next && !isDirectMedia(next.url)) {
+          void openRemoteProvider(next.url);
+        } else {
+          void closeRemoteProvider();
+        }
+        return { ok: true, action };
+      }
+      case "close-provider": {
+        try {
+          const closed = await closeRemoteProvider();
+          return closed ? { ok: true, action, message: "Provider tab closed." } : { ok: false, action, message: "Could not close the provider tab." };
+        } catch {
+          return { ok: false, action, message: "Could not close the provider tab. Please try again on the TV." };
+        }
+      }
+      case "play":
+        if (!video) return { ok: false, action, message: "Le lecteur vidéo natif n'est pas actif pour cette chaîne." };
+        void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        return { ok: true, action };
+      case "pause":
+        if (!video) return { ok: false, action, message: "Le lecteur vidéo natif n'est pas actif pour cette chaîne." };
+        video.pause(); setIsPlaying(false); return { ok: true, action };
+      case "volume":
+        if (!video || typeof command.value !== "number" || !Number.isFinite(command.value)) return { ok: false, action, message: "Volume indisponible pour ce lecteur." };
+        video.volume = Math.max(0, Math.min(1, command.value / 100)); return { ok: true, action };
+      case "mute":
+        if (!video) return { ok: false, action, message: "Son indisponible pour ce lecteur." };
+        video.muted = !video.muted; setIsMuted(video.muted); return { ok: true, action };
+      case "seek":
+        if (!video || !Number.isFinite(command.value) || !Number.isFinite(video.duration)) return { ok: false, action, message: "Recherche temporelle indisponible pour ce lecteur." };
+        video.currentTime = Math.max(0, Math.min(video.duration, Number(command.value))); return { ok: true, action };
+      case "key": {
+        const allowed = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter", "Escape", "Home", "Backspace", "Delete", "Tab"]);
+        if (typeof command.key !== "string" || !allowed.has(command.key)) return { ok: false, action, message: "Touche non autorisée." };
+        const target = document.activeElement instanceof HTMLElement ? document.activeElement : document.body;
+        target.dispatchEvent(new KeyboardEvent("keydown", { key: command.key, bubbles: true, cancelable: true }));
+        target.dispatchEvent(new KeyboardEvent("keyup", { key: command.key, bubbles: true, cancelable: true }));
+        return { ok: true, action };
+      }
+      case "text": {
+        if (typeof command.value !== "string" || command.value.length > 300) return { ok: false, action, message: "Texte invalide." };
+        const target = document.activeElement;
+        if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) || target.disabled || target.readOnly) return { ok: false, action, message: "Cliquez d'abord dans un champ de saisie sur la TV." };
+        const setter = Object.getOwnPropertyDescriptor(target instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value")?.set;
+        setter?.call(target, target.value + command.value);
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+        return { ok: true, action };
+      }
+      case "fullscreen": setFullScreenPlayer(v => !v); return { ok: true, action };
+      case "disconnect": return { ok: true, action };
+      default: return { ok: false, action, message: "Commande inconnue." };
+    }
+  }, []);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleFullscreen = async () => {
+    const target = videoWrapRef.current;
+    if (!target) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setFullScreenPlayer(false);
+      } else if (fullScreenPlayer) {
+        setFullScreenPlayer(false);
+      } else if (target.requestFullscreen) {
+        await target.requestFullscreen();
+        setFullScreenPlayer(true);
+      } else {
+        setFullScreenPlayer(true);
+      }
+    } catch {
+      // iOS Safari and embedded contexts may not expose the Fullscreen API.
+      setFullScreenPlayer(v => !v);
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const sync = () => { setIsMuted(video.muted); setIsPlaying(!video.paused); };
+    video.addEventListener("volumechange", sync);
+    video.addEventListener("play", sync);
+    video.addEventListener("pause", sync);
+    video.addEventListener("ended", sync);
+    const onFullscreen = () => setFullScreenPlayer(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFullscreen);
+    sync();
+    return () => {
+      video.removeEventListener("volumechange", sync);
+      video.removeEventListener("play", sync);
+      video.removeEventListener("pause", sync);
+      video.removeEventListener("ended", sync);
+      document.removeEventListener("fullscreenchange", onFullscreen);
+    };
+  }, []);
+
+  const countryName = (value?: string, channelName = "") => {
+    const raw = (value || "").split(/[;,]/)[0].trim();
+    const codeMap: Record<string, string> = { CN: "China", CHN: "China", LB: "Lebanon", LBN: "Lebanon", FR: "France", FRA: "France", US: "United States", USA: "United States", GB: "United Kingdom", GBR: "United Kingdom", CA: "Canada", CAN: "Canada", AE: "United Arab Emirates", UAE: "United Arab Emirates", SA: "Saudi Arabia", KSA: "Saudi Arabia", EG: "Egypt", EGY: "Egypt", IQ: "Iraq", IR: "Iran", SY: "Syria", JO: "Jordan", TR: "Turkey", DE: "Germany", IT: "Italy", ES: "Spain", RU: "Russia", IN: "India", PK: "Pakistan", JP: "Japan", KR: "South Korea", AU: "Australia", BR: "Brazil", MX: "Mexico" };
+    if (raw) return codeMap[raw.toUpperCase()] || raw;
+    const n = `${channelName} ${value || ""}`.toLowerCase();
+    const hints: [RegExp, string][] = [[/china|chinese|cctv/, "China"], [/lebanon|lebanese|mtv lebanon|al jadeed|lbc/, "Lebanon"], [/france|french|fr\s*24/, "France"], [/united kingdom|british|bbc|uk\b/, "United Kingdom"], [/united states|american|usa\b|\bus\b/, "United States"], [/canada|canadian|cbc/, "Canada"], [/turkey|turkish|turkiye/, "Turkey"], [/egypt|egyptian/, "Egypt"], [/iraq|iraqi/, "Iraq"], [/syria|syrian/, "Syria"], [/saudi|ksa/, "Saudi Arabia"], [/india|indian/, "India"], [/pakistan|pakistani/, "Pakistan"], [/japan|japanese/, "Japan"], [/south korea|korean/, "South Korea"], [/russia|russian/, "Russia"], [/germany|german/, "Germany"], [/italy|italian/, "Italy"], [/spain|spanish/, "Spain"], [/australia|australian/, "Australia"]];
+    return hints.find(([re]) => re.test(n))?.[1] || "Other / Unknown";
+  };
+  const countries = useMemo(() => ["All countries", ...Array.from(new Set([...channels.map(c => countryName(c.country, c.name)), "Lebanon", "Saudi Arabia"].filter(Boolean)))].filter((country, index, all) => all.indexOf(country) === index).sort((a, b) => a === "All countries" ? -1 : b === "All countries" ? 1 : a.localeCompare(b)), [channels]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const regular = channels.filter(c => {
+      // Hide playlist duplicates for channels represented by the curated special cards.
+      if (canonicalSpecial(c.name)) return false;
+      const matchesQuery = `${c.name} ${c.group || ""} ${c.country || ""}`.toLowerCase().includes(q);
+      const matchesGroup = category === "All countries" || countryName(c.country, c.name) === category;
+      const matchesFav = !onlyFavorites || favorites.includes(c.name);
+      const matchesHistory = !onlyHistory || history.includes(c.name);
+      return matchesQuery && matchesGroup && matchesFav && matchesHistory;
+    });
+    const special = SPECIALS.filter(c => {
+      const matchesQuery = `${c.name} ${c.note} Lebanon`.toLowerCase().includes(q);
+      const specialCountry = c.name === "Al Hadath" ? "Saudi Arabia" : "Lebanon";
+      const matchesGroup = category === "All countries" || specialCountry === category;
+      const matchesFav = !onlyFavorites || favorites.includes(c.name);
+      const matchesHistory = !onlyHistory || history.includes(c.name);
+      return matchesQuery && matchesGroup && matchesFav && matchesHistory;
+    });
+    const combined = [...special, ...regular];
+    return onlyHistory ? combined.sort((a, b) => history.indexOf(a.name) - history.indexOf(b.name)) : combined;
+  }, [channels, query, category, onlyFavorites, onlyHistory, favorites, history]);
+
+  async function toggleFavorite(name: string) {
+    const removing = favorites.includes(name);
+    const next = removing ? favorites.filter(x => x !== name) : [...favorites, name];
+    setFavorites(next);
+    try { localStorage.setItem("khalaf-favorites", JSON.stringify(next)); } catch {}
+    try {
+      await fetch("/api/favorites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, remove: removing }) });
+    } catch {}
   }
 
   function rememberChannel(name: string) {
