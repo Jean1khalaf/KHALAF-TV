@@ -93,6 +93,8 @@ export default function KhalafTV() {
   const [category, setCategory] = useState("All countries");
   const [fullScreenPlayer, setFullScreenPlayer] = useState(false);
   const [selected, setSelected] = useState<Channel | Special | null>(null);
+  const selectedRef = useRef<Channel | Special | null>(null);
+  selectedRef.current = selected;
   const [favorites, setFavorites] = useState<string[]>([]);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -261,6 +263,21 @@ export default function KhalafTV() {
     const video = videoRef.current;
     const action = typeof command.action === "string" ? command.action : "unknown";
     switch (action) {
+      case "open-provider-tab": {
+        const current = selectedRef.current;
+        if (!current || !("note" in current) || isDirectMedia(current.url)) {
+          return { ok: false, action, message: "Sélectionnez d'abord MTV, LBC, Al Jadeed ou Al Hadath." };
+        }
+        if (window.khalafDesktop?.isDesktop) {
+          void window.khalafDesktop.openProvider(current.url).then(result => {
+            if (!result.ok) console.warn("KHALAF TV provider window:", result.message);
+          }).catch(error => console.error("Could not open provider window:", error));
+          return { ok: true, action };
+        }
+        const tab = providerTabRef.current;
+        if (!tab || tab.closed) return { ok: false, action, message: "Sur Web, cliquez d'abord sur Enable remote channel tab depuis l'écran TV." };
+        return { ok: openProviderInArmedTab(current.url), action };
+      }
       case "select": {
         const requested = command.channel as Channel | undefined;
         if (!requested || typeof requested.name !== "string" || typeof requested.url !== "string") return { ok: false, action, message: "Chaîne invalide." };

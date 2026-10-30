@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Ably from "ably";
-import { Tv, Smartphone, Power, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, CornerDownLeft, Pause, Play, Volume2, VolumeX, Search, Keyboard, Heart, Clock3, Settings2, SkipBack, SkipForward, Maximize, Send, Wifi, ListVideo, Trash2 } from "lucide-react";
+import { Tv, Smartphone, Power, ExternalLink, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Home, CornerDownLeft, Pause, Play, Volume2, VolumeX, Search, Keyboard, Heart, Clock3, Settings2, SkipBack, SkipForward, Maximize, Send, Wifi, ListVideo, Trash2 } from "lucide-react";
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Joined = { sessionId: string; channel: string; phoneSecret: string };
 type RemoteStatus = { type?: string; channelName?: string; playing?: boolean; volume?: number; muted?: boolean; fullscreen?: boolean; currentTime?: number; duration?: number; commandId?: number; ok?: boolean; action?: string; message?: string; sessionState?: string };
@@ -45,7 +45,7 @@ export default function RemoteClient() {
     {!joined ? <form className="remote-pair-card" onSubmit={pair}><div className="remote-icon"><Smartphone size={28}/></div><h1>Connect your TV</h1><p>Enter the 8-digit code displayed on KHALAF TV. This session is temporary and private.</p><label htmlFor="pair-code">Pairing code</label><input id="pair-code" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,8))} placeholder="12345678" required/><button className="remote-primary" disabled={code.length!==8}>Connect remote</button>{error&&<p className="remote-error">{error}</p>}<small>The code expires after 10 minutes. Do not share it.</small></form> : <div className="remote-controls">
       <div className="remote-connected-card"><span className="connected-mark"><Tv size={23}/></span><div><strong>{selected || "KHALAF TV"}</strong><small>{status}</small></div><button title="Disconnect" aria-label="Disconnect remote" onClick={()=>{ void send({action:"disconnect"}); void closeSession(); }}><Power size={18}/></button></div>
       <div className="remote-small-actions">
-        <button onClick={() => void send({ action: "open-provider-tab" })}><Power size={16}/> Enable / Open provider tab</button>
+        <button onClick={() => void send({ action: "open-provider-tab" })}><ExternalLink size={16}/> Open provider tab</button>
         <button onClick={() => void send({ action: "close-provider" })}><Power size={16}/> Close provider tab</button>
       </div>
       <nav className="remote-tabs" aria-label="Remote sections">{([{id:"remote",label:"Remote",icon:<Settings2 size={16}/>},{id:"channels",label:"Channels",icon:<Tv size={16}/>},{id:"favorites",label:"Favorites",icon:<Heart size={16}/>},{id:"tools",label:"Tools",icon:<Keyboard size={16}/>} ] as const).map(item=><button key={item.id} className={tab===item.id?"active":""} onClick={()=>setTab(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav>
