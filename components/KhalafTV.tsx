@@ -8,15 +8,6 @@ import TVPairingPanel from "./TVPairingPanel";
 
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Special = { name: string; url: string; note: string };
-declare global {
-  interface Window {
-    khalafDesktop?: {
-      isDesktop: true;
-      openProvider: (url: string) => Promise<{ ok: boolean; message?: string }>;
-      closeProvider: () => Promise<{ ok: boolean; message?: string }>;
-    };
-  }
-}
 
 const SPECIALS: Special[] = [
   { name: "Al Hadath", url: process.env.NEXT_PUBLIC_AL_HADATH_STREAM || process.env.NEXT_PUBLIC_AL_HADATH_EMBED || "https://www.elahmad.ru/tv/alarabiya_alhadath.php", note: "News · Live TV" },
@@ -44,7 +35,7 @@ const COPY = {
     listed: "channels listed", now: "NOW PLAYING", liveBadge: "LIVE", source: "Open source",
     sourceTitle: "Source player", sourceHelp: "Why doesn't it fit?", hideInfo: "Hide info",
     sourceWarning: "This provider page may block embedding or show its own banners and controls. KHALAF TV cannot remove content inside a third-party page. For a clean native player, configure an authorized direct stream URL or official embeddable player.",
-    sourceFallback: "Open provider page", returnToDirectory: "Choose another channel", blockedTitle: "This provider does not allow its webpage to be embedded in KHALAF TV.", blockedHelp: "Enable the provider tab once on the TV. After that, your phone can switch channels in that tab or close it remotely.", returnHint: "When you are finished, switch back to the KHALAF TV tab in your browser or use this button to choose another channel.", choose: "Choose a channel to start watching", chooseHint: "Select a channel from the list below.",
+    sourceFallback: "Open provider page", returnToDirectory: "Choose another channel", blockedTitle: "This provider does not allow its webpage to be embedded in KHALAF TV.", blockedHelp: "Open the provider in a new tab to watch. KHALAF TV will stay open in this tab, so you can return here and choose another channel.", returnHint: "When you are finished, switch back to the KHALAF TV tab in your browser or use this button to choose another channel.", choose: "Choose a channel to start watching", chooseHint: "Select a channel from the list below.",
     external: "Lebanese TV · External source", addFavorite: "Add favorite", saved: "Saved",
     explore: "Explore channels", loading: "Loading the public playlist…", toExplore: "channels to explore",
     search: "Search channels, countries…", stream: "Live streams", refresh: "Refresh", noResults: "No channels found",
@@ -74,7 +65,7 @@ const COPY = {
     listed: "chaînes disponibles", now: "EN COURS", liveBadge: "DIRECT", source: "Ouvrir la source",
     sourceTitle: "Lecteur externe", sourceHelp: "Pourquoi cet affichage ?", hideInfo: "Masquer les infos",
     sourceWarning: "Le fournisseur peut bloquer l’intégration ou afficher ses propres publicités et commandes. KHALAF TV ne peut pas retirer le contenu d’une page tierce. Pour un lecteur intégré propre, configurez un flux direct autorisé ou un lecteur officiel.",
-    sourceFallback: "Ouvrir la page du fournisseur", returnToDirectory: "Choisir une autre chaîne", blockedTitle: "Ce fournisseur n’autorise pas l’intégration de sa page dans KHALAF TV.", blockedHelp: "Activez une fois l’onglet de lecture sur la TV. Ensuite, votre téléphone pourra ouvrir une autre chaîne dans ce même onglet et le fermer à distance.", returnHint: "Lorsque vous avez terminé, revenez à l’onglet KHALAF TV de votre navigateur ou utilisez ce bouton pour choisir une autre chaîne.", choose: "Choisissez une chaîne", chooseHint: "Sélectionnez une chaîne ci-dessous pour commencer.",
+    sourceFallback: "Ouvrir la page du fournisseur", returnToDirectory: "Choisir une autre chaîne", blockedTitle: "Ce fournisseur n’autorise pas l’intégration de sa page dans KHALAF TV.", blockedHelp: "Ouvrez le fournisseur dans un nouvel onglet pour regarder la chaîne. KHALAF TV restera ouvert dans cet onglet pour vous permettre de revenir et de choisir une autre chaîne.", returnHint: "Lorsque vous avez terminé, revenez à l’onglet KHALAF TV de votre navigateur ou utilisez ce bouton pour choisir une autre chaîne.", choose: "Choisissez une chaîne", chooseHint: "Sélectionnez une chaîne ci-dessous pour commencer.",
     external: "Télévision libanaise · Source externe", addFavorite: "Ajouter aux favoris", saved: "Enregistré",
     explore: "Explorer les chaînes", loading: "Chargement de la playlist publique…", toExplore: "chaînes à découvrir",
     search: "Rechercher une chaîne, un pays…", stream: "Flux en direct", refresh: "Actualiser", noResults: "Aucune chaîne trouvée",
@@ -83,6 +74,16 @@ const COPY = {
     english: "English", arabic: "العربية", language: "Langue", sourceNote: "Chaîne en direct · KHALAF TV",
   }
 };
+
+declare global {
+  interface Window {
+    khalafDesktop?: {
+      isDesktop: true;
+      openProvider: (url: string) => Promise<{ ok: boolean; message?: string }>;
+      closeProvider: () => Promise<{ ok: boolean; message?: string }>;
+    };
+  }
+}
 
 export default function KhalafTV() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -101,12 +102,67 @@ export default function KhalafTV() {
   const [showPairing, setShowPairing] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [onlyHistory, setOnlyHistory] = useState(false);
-  const providerTabRef = useRef<Window | null>(null);
-  const [providerTabReady, setProviderTabReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoWrapRef = useRef<HTMLDivElement>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const providerWindowRef = useRef<Window | null>(null);
+  const [providerTabReady, setProviderTabReady] = useState(false);
+  const [providerTabMessage, setProviderTabMessage] = useState("");
+  const [providerTabUrl, setProviderTabUrl] = useState("");
+  const desktopBridge = typeof window !== "undefined" ? window.khalafDesktop : undefined;
+
+  function enableRemoteProviderTab() {
+    // Must be called by a physical click on the TV browser; browsers block
+    // popup creation when the request originates only from a remote device.
+    if (desktopBridge?.isDesktop) {
+      setProviderTabReady(true);
+      setProviderTabMessage("Windows remote channel control is ready.");
+      return;
+    }
+    const popup = window.open("about:blank", "khalaf-tv-provider", "popup=yes,width=1280,height=800");
+    if (!popup) {
+      setProviderTabReady(false);
+      setProviderTabMessage("Popup blocked. Allow pop-ups for this KHALAF TV site, then click Enable again.");
+      return;
+    }
+    providerWindowRef.current = popup;
+    setProviderTabReady(true);
+    setProviderTabMessage("Remote channel tab enabled. You can now switch channels from your phone.");
+    try {
+      popup.document.title = "KHALAF TV · Provider";
+      popup.document.body.innerHTML = "<div style='font:16px Arial;padding:32px;background:#080b12;color:#fff'>KHALAF TV remote channel window is ready. Select a channel from your phone.</div>";
+    } catch {}
+  }
+
+  async function openRemoteProvider(url: string) {
+    if (desktopBridge?.isDesktop) {
+      const result = await desktopBridge.openProvider(url);
+      return result.ok;
+    }
+    const popup = providerWindowRef.current;
+    if (!popup || popup.closed) {
+      setProviderTabReady(false);
+      setProviderTabMessage("Enable the provider tab on the TV first.");
+      return false;
+    }
+    try { popup.location.href = url; setProviderTabUrl(url); return true; }
+    catch { setProviderTabMessage("Could not navigate the provider tab."); return false; }
+  }
+
+  async function closeRemoteProvider() {
+    if (desktopBridge?.isDesktop) {
+      const result = await desktopBridge.closeProvider();
+      return result.ok;
+    }
+    const popup = providerWindowRef.current;
+    if (popup && !popup.closed) popup.close();
+    providerWindowRef.current = null;
+    setProviderTabUrl("");
+    setProviderTabReady(false);
+    setProviderTabMessage("Provider tab closed.");
+    return true;
+  }
 
   async function loadChannels() {
     setLoading(true); setError("");
@@ -201,30 +257,6 @@ export default function KhalafTV() {
     };
   }, [selected]);
 
-  // Browsers block window.open when it is triggered by a remote phone command.
-  // The TV user arms one reusable tab with a direct click; remote commands can
-  // then navigate or close only that tab because this page created it.
-  const armProviderTab = useCallback(() => {
-    const tab = window.open("about:blank", "khalaf-tv-provider");
-    if (!tab) { setProviderTabReady(false); return false; }
-    providerTabRef.current = tab;
-    setProviderTabReady(true);
-    if (selected && "note" in selected && !isDirectMedia(selected.url)) tab.location.href = selected.url;
-    return true;
-  }, [selected]);
-  const openProviderInArmedTab = useCallback((url: string) => {
-    let tab = providerTabRef.current;
-    if (!tab || tab.closed) { setProviderTabReady(false); return false; }
-    try { tab.location.href = url; tab.focus(); return true; }
-    catch { setProviderTabReady(false); providerTabRef.current = null; return false; }
-  }, []);
-  const closeProviderTab = useCallback(() => {
-    const tab = providerTabRef.current;
-    if (tab && !tab.closed) tab.close();
-    providerTabRef.current = null;
-    setProviderTabReady(false);
-  }, []);
-
   const handleRemoteCommand = useCallback((command: Record<string, unknown>): { ok: boolean; action: string; message?: string } => {
     const video = videoRef.current;
     const action = typeof command.action === "string" ? command.action : "unknown";
@@ -236,19 +268,17 @@ export default function KhalafTV() {
         const next = specialKey ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested : requested;
         setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next); setFullScreenPlayer(true);
         if ("note" in next && !isDirectMedia(next.url)) {
-          if (window.khalafDesktop?.isDesktop) {
-            void window.khalafDesktop.openProvider(next.url).then(result => { if (!result.ok) console.warn("KHALAF TV provider window:", result.message); }).catch(error => console.error("Could not open provider window:", error));
-          } else if (providerTabRef.current && !providerTabRef.current.closed) {
-            if (!openProviderInArmedTab(next.url)) return { ok: false, action, message: "Activez d’abord « Enable remote channel tab » sur l’écran TV, puis réessayez." };
-          } else {
-            return { ok: false, action, message: "Pour autoriser l’ouverture à distance, cliquez une fois sur « Enable remote channel tab » sur l’écran TV." };
-          }
+          void openRemoteProvider(next.url);
         } else {
-          if (window.khalafDesktop?.isDesktop) void window.khalafDesktop.closeProvider().catch(() => undefined);
-          else closeProviderTab();
+          void closeRemoteProvider();
         }
         return { ok: true, action };
       }
+      case "open-provider-tab":
+        return { ok: true, action, message: providerTabReady ? "Provider tab ready." : "On web, click Enable remote channel tab on the TV first; Windows app can open it remotely." };
+      case "close-provider":
+        void closeRemoteProvider();
+        return { ok: true, action };
       case "play":
         if (!video) return { ok: false, action, message: "Le lecteur vidéo natif n'est pas actif pour cette chaîne." };
         void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
@@ -284,14 +314,7 @@ export default function KhalafTV() {
         return { ok: true, action };
       }
       case "fullscreen": setFullScreenPlayer(v => !v); return { ok: true, action };
-      case "close-provider":
-        if (window.khalafDesktop?.isDesktop) void window.khalafDesktop.closeProvider();
-        else closeProviderTab();
-        return { ok: true, action };
-      case "disconnect":
-        if (window.khalafDesktop?.isDesktop) void window.khalafDesktop.closeProvider();
-        else closeProviderTab();
-        return { ok: true, action };
+      case "disconnect": return { ok: true, action };
       default: return { ok: false, action, message: "Commande inconnue." };
     }
   }, []);
@@ -428,7 +451,19 @@ export default function KhalafTV() {
         </aside>
 
         <section className="main-content">
-          <div className="welcome-row"><div><div className="eyebrow"><Radio size={14}/> {t.eyebrow}</div><h1>{t.titleA} <span>{t.titleB}</span></h1><p>{t.intro}</p></div><div className="channel-count"><strong>{channels.length.toLocaleString()}</strong><span>{t.listed}</span></div></div>
+          <div className="welcome-row"><div><div className="eyebrow"><Radio size={14}/> {t.eyebrow}</div><h1>{t.titleA} <span>{t.titleB}</span></h1><p>{t.intro}</p>
+              <div className="provider-remote-tools">
+                <button type="button" className="primary-button" onClick={enableRemoteProviderTab}>
+                  Enable remote channel tab
+                </button>
+                <button type="button" className="secondary-button" onClick={() => { void openRemoteProvider(selectedUrl); }}>
+                  Open provider page
+                </button>
+                <button type="button" className="secondary-button" onClick={() => { void closeRemoteProvider(); }}>
+                  Close provider tab
+                </button>
+                {providerTabMessage && <small role="status">{providerTabMessage}</small>}
+              </div></div><div className="channel-count"><strong>{channels.length.toLocaleString()}</strong><span>{t.listed}</span></div></div>
           <div className={`player-card ${fullScreenPlayer ? "player-card-fullscreen" : ""}`}>
             <div className="player-topline"><span><i className="red-dot"/> NOW PLAYING</span><div className="player-topline-actions"><span className="quality-tag">LIVE</span>{fullScreenPlayer && <button className="fullscreen-close" onClick={() => setFullScreenPlayer(false)} aria-label="Exit full screen"><Minimize2 size={17}/> Exit full screen</button>}</div></div>
             {isSpecial && !isNativeSpecial ? (
@@ -446,9 +481,15 @@ export default function KhalafTV() {
                   <h3>{t.blockedTitle}</h3>
                   <p>{t.blockedHelp}</p>
                   <div className="provider-fallback-actions">
-                    {!window.khalafDesktop?.isDesktop && <button className="provider-open-button" onClick={() => { if (!armProviderTab()) window.alert("Le navigateur a bloqué le nouvel onglet. Autorisez les pop-ups pour ce site, puis réessayez."); }}>
-                      <ExternalLink size={16}/>{providerTabReady ? "Remote channel tab enabled" : "Enable remote channel tab"}
-                    </button>}
+                    <button className="provider-open-button" type="button" onClick={enableRemoteProviderTab}>
+                      <ExternalLink size={16}/> Enable remote channel tab
+                    </button>
+                    <button className="provider-return-button" type="button" onClick={() => { void openRemoteProvider(selectedUrl); }}>
+                      <ExternalLink size={16}/> Open in remote tab
+                    </button>
+                    <button className="provider-return-button" type="button" onClick={() => { void closeRemoteProvider(); }}>
+                      <Tv size={16}/> Close provider tab
+                    </button>
                     <a className="provider-open-button" href={selectedUrl} target="_blank" rel="noopener noreferrer">
                       <ExternalLink size={16}/>{t.sourceFallback}
                     </a>
