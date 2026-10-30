@@ -6,7 +6,7 @@ import { Link2, Smartphone, X, RefreshCw } from "lucide-react";
 
 type PairingSession = { sessionId: string; code: string; tvSecret: string; channel: string; expiresIn: number };
 type CommandResult = { ok: boolean; action: string; message?: string };
-type Props = { onCommand: (command: Record<string, unknown>) => CommandResult; onClose: () => void };
+type Props = { onCommand: (command: Record<string, unknown>) => CommandResult | Promise<CommandResult>; onClose: () => void };
 async function publishStatus(channel: Ably.RealtimeChannel) {
   const video = document.querySelector("video");
   const title = document.querySelector(".player-meta .now-channel strong, .video-caption span:last-child, .special-title")?.textContent || "";
@@ -39,11 +39,15 @@ export default function TVPairingPanel({ onCommand, onClose }: Props) {
       else if (data?.type === "remote-command") {
         try {
           const command = data.command as Record<string, unknown>;
-          const result = onCommand(command);
-          void channel.publish("status", { type: "command-ack", commandId: data.commandId, receivedAt: Date.now(), ...result });
-          setStatus(result.ok ? "Phone connected · command confirmed" : `Command unavailable · ${result.message || result.action}`);
-          void publishStatus(channel);
-          if (command.action === "disconnect") void closeSession();
+          void Promise.resolve(onCommand(command)).then(result => {
+            void channel.publish("status", { type: "command-ack", commandId: data.commandId, receivedAt: Date.now(), ...result });
+            setStatus(result.ok ? "Phone connected · command confirmed" : `Command unavailable · ${result.message || result.action}`);
+            void publishStatus(channel);
+            if (command.action === "disconnect") void closeSession();
+          }).catch(() => {
+            void channel.publish("status", { type: "command-ack", commandId: data.commandId, receivedAt: Date.now(), ok: false, action: typeof command.action === "string" ? command.action : "unknown", message: "The TV could not apply this command." });
+            setError("The TV received a command but could not apply it.");
+          });
         } catch {
           setError("The TV received a command but could not apply it.");
         }

@@ -259,7 +259,7 @@ export default function KhalafTV() {
     };
   }, [selected]);
 
-  const handleRemoteCommand = useCallback((command: Record<string, unknown>): { ok: boolean; action: string; message?: string } => {
+  const handleRemoteCommand = useCallback(async (command: Record<string, unknown>): Promise<{ ok: boolean; action: string; message?: string }> => {
     const video = videoRef.current;
     const action = typeof command.action === "string" ? command.action : "unknown";
     switch (action) {
@@ -269,13 +269,17 @@ export default function KhalafTV() {
           return { ok: false, action, message: "Sélectionnez d'abord MTV, LBC, Al Jadeed ou Al Hadath." };
         }
         if (window.khalafDesktop?.isDesktop) {
-          void window.khalafDesktop.openProvider(current.url).then(result => {
-            if (!result.ok) console.warn("KHALAF TV provider window:", result.message);
-          }).catch(error => console.error("Could not open provider window:", error));
-          return { ok: true, action };
+          try {
+            const result = await window.khalafDesktop.openProvider(current.url);
+            return result.ok ? { ok: true, action, message: "Provider window opened." } : { ok: false, action, message: result.message || "Could not open provider window." };
+          } catch {
+            return { ok: false, action, message: "Could not open provider window. Please try again on the TV." };
+          }
         }
-        void openRemoteProvider(current.url);
-        return { ok: true, action };
+        const opened = await openRemoteProvider(current.url);
+        return opened
+          ? { ok: true, action, message: "Provider tab opened." }
+          : { ok: false, action, message: "On the TV, click Enable remote channel tab first and allow pop-ups, then try again." };
       }
       case "select": {
         const requested = command.channel as Channel | undefined;
@@ -290,11 +294,14 @@ export default function KhalafTV() {
         }
         return { ok: true, action };
       }
-      case "open-provider-tab":
-        return { ok: true, action, message: providerTabReady ? "Provider tab ready." : "On web, click Enable remote channel tab on the TV first; Windows app can open it remotely." };
-      case "close-provider":
-        void closeRemoteProvider();
-        return { ok: true, action };
+      case "close-provider": {
+        try {
+          const closed = await closeRemoteProvider();
+          return closed ? { ok: true, action, message: "Provider tab closed." } : { ok: false, action, message: "Could not close the provider tab." };
+        } catch {
+          return { ok: false, action, message: "Could not close the provider tab. Please try again on the TV." };
+        }
+      }
       case "play":
         if (!video) return { ok: false, action, message: "Le lecteur vidéo natif n'est pas actif pour cette chaîne." };
         void video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
