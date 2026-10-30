@@ -122,7 +122,7 @@ export default function KhalafTV() {
       setProviderTabMessage("Windows remote channel control is ready.");
       return;
     }
-    const popup = window.open("about:blank", "khalaf-tv-provider", "popup=yes,width=1280,height=800");
+    const popup = window.open("about:blank", "khalaf-tv-provider");
     if (!popup) {
       setProviderTabReady(false);
       setProviderTabMessage("Popup blocked. Allow pop-ups for this KHALAF TV site, then click Enable again.");
