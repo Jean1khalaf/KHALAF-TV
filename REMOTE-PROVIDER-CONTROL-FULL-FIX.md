@@ -35,3 +35,10 @@ The Electron app exposes a narrow preload bridge. The phone's paired command can
 ## Keep remote control enabled after closing a provider
 
 In browser mode, **Close provider tab** now navigates the already-authorized provider window to a blank KHALAF TV standby page instead of destroying the window. This preserves the browser's user-gesture authorization, so the phone can open the next provider without another click on the TV. Browsers do not permit scripts to close and then silently reopen arbitrary tabs from a remote command. In the Windows desktop app, the desktop bridge continues to manage its provider window.
+
+
+## v5 provider window behavior
+
+- Browser mode navigates the authorized popup to a dark KHALAF TV standby page on close, avoiding the visible white `about:blank` window.
+- Electron/Windows mode hides the provider window on close and restores it in a normal 1280×800 windowed state on the next provider open, explicitly exiting fullscreen/maximized state.
+- Browser security does not provide a supported way for a webpage to hide/minimize a separate popup. For the requested fully hidden standby behavior, use the Windows desktop app.

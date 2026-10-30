@@ -31,6 +31,11 @@ function openProvider(value) {
   if (providerWindow && !providerWindow.isDestroyed()) {
     try {
       if (providerWindow.isMinimized()) providerWindow.restore();
+      if (providerWindow.isFullScreen()) providerWindow.setFullScreen(false);
+      if (providerWindow.isMaximized()) providerWindow.unmaximize();
+      // Keep a consistent windowed size; never reopen the provider fullscreen.
+      providerWindow.setBounds({ width: 1280, height: 800 });
+      providerWindow.center();
       providerWindow.show();
       providerWindow.focus();
       providerWindow.loadURL(value);
