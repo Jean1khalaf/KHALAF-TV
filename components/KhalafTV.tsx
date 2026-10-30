@@ -274,9 +274,8 @@ export default function KhalafTV() {
           }).catch(error => console.error("Could not open provider window:", error));
           return { ok: true, action };
         }
-        const tab = providerTabRef.current;
-        if (!tab || tab.closed) return { ok: false, action, message: "Sur Web, cliquez d'abord sur Enable remote channel tab depuis l'écran TV." };
-        return { ok: openProviderInArmedTab(current.url), action };
+        void openRemoteProvider(current.url);
+        return { ok: true, action };
       }
       case "select": {
         const requested = command.channel as Channel | undefined;
