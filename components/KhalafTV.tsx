@@ -81,7 +81,6 @@ declare global {
       isDesktop: true;
       openProvider: (url: string) => Promise<{ ok: boolean; message?: string }>;
       closeProvider: () => Promise<{ ok: boolean; message?: string }>;
-      focusMain: () => Promise<{ ok: boolean; message?: string }>;
     };
   }
 }
@@ -138,6 +137,17 @@ export default function KhalafTV() {
     } catch {}
   }
 
+  function requestMainTabFocus() {
+    // Best-effort only: browsers may ignore focus requests from background tabs.
+    // Keep the provider tab open so the next remote channel command can reuse it.
+    try { providerWindowRef.current?.blur(); } catch {}
+    try { window.focus(); } catch {}
+    window.setTimeout(() => {
+      try { providerWindowRef.current?.blur(); } catch {}
+      try { window.focus(); } catch {}
+    }, 150);
+  }
+
   async function openRemoteProvider(url: string) {
     if (desktopBridge?.isDesktop) {
       const result = await desktopBridge.openProvider(url);
@@ -149,8 +159,16 @@ export default function KhalafTV() {
       setProviderTabMessage("Enable the provider tab on the TV first.");
       return false;
     }
-    try { popup.location.href = url; setProviderTabUrl(url); return true; }
-    catch { setProviderTabMessage("Could not navigate the provider tab."); return false; }
+    try {
+      popup.location.href = url;
+      setProviderTabUrl(url);
+      // Ask the browser to return to KHALAF TV after navigating the provider tab.
+      requestMainTabFocus();
+      return true;
+    } catch {
+      setProviderTabMessage("Could not navigate the provider tab.");
+      return false;
+    }
   }
 
   async function closeRemoteProvider() {
@@ -320,16 +338,7 @@ export default function KhalafTV() {
           void openRemoteProvider(next.url);
         } else {
           void closeRemoteProvider();
-        }
-        // Keep the provider tab/window available for playback, but return the
-        // visible browser/app to the main KHALAF TV screen after remote zapping.
-        if (window.khalafDesktop?.isDesktop) {
-          void window.khalafDesktop.focusMain();
-        } else {
-          try {
-            window.focus();
-            providerWindowRef.current?.blur();
-          } catch {}
+          requestMainTabFocus();
         }
         return { ok: true, action };
       }
