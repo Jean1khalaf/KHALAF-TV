@@ -12,13 +12,35 @@ function isAllowedProvider(value) {
   } catch { return false; }
 }
 function closeProvider() {
-  if (providerWindow && !providerWindow.isDestroyed()) providerWindow.close();
-  providerWindow = null;
+  // Keep the dedicated provider window alive so remote commands can reuse it.
+  // Hide it rather than destroy it; this avoids recreating/maximizing a new
+  // window every time the user changes channels.
+  if (providerWindow && !providerWindow.isDestroyed()) {
+    try {
+      providerWindow.loadURL("about:blank");
+      providerWindow.hide();
+    } catch {}
+  }
   return { ok: true };
 }
 function openProvider(value) {
   if (!isAllowedProvider(value)) return { ok: false, message: "Provider URL is not allowed." };
-  closeProvider();
+
+  // Reuse the same native window and its existing bounds/state on channel
+  // changes. Restore only if it was minimized; never force full-screen.
+  if (providerWindow && !providerWindow.isDestroyed()) {
+    try {
+      if (providerWindow.isMinimized()) providerWindow.restore();
+      providerWindow.show();
+      providerWindow.focus();
+      providerWindow.loadURL(value);
+      return { ok: true };
+    } catch {
+      try { providerWindow.destroy(); } catch {}
+      providerWindow = null;
+    }
+  }
+
   providerWindow = new BrowserWindow({
     width: 1280, height: 800, minWidth: 800, minHeight: 500,
     autoHideMenuBar: true, backgroundColor: "#080b12",
