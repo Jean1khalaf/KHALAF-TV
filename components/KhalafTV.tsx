@@ -265,8 +265,11 @@ export default function KhalafTV() {
     switch (action) {
       case "open-provider-tab": {
         const current = selectedRef.current;
-        if (!current || !("note" in current) || isDirectMedia(current.url)) {
-          return { ok: false, action, message: "Sélectionnez d'abord MTV, LBC, Al Jadeed ou Al Hadath." };
+        // Remote channel selection can arrive as a plain Channel object (without
+        // the UI-only `note` field). Identify provider channels by their name too.
+        const isProviderChannel = !!current && (!!canonicalSpecial(current.name) || "note" in current);
+        if (!current || !isProviderChannel || isDirectMedia(current.url)) {
+          return { ok: false, action, message: "Select MTV Lebanon, LBC Lebanon, Al Jadeed, or Al Hadath first." };
         }
         if (window.khalafDesktop?.isDesktop) {
           try {
