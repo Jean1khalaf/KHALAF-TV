@@ -81,6 +81,7 @@ declare global {
       isDesktop: true;
       openProvider: (url: string) => Promise<{ ok: boolean; message?: string }>;
       closeProvider: () => Promise<{ ok: boolean; message?: string }>;
+      focusMain: () => Promise<{ ok: boolean; message?: string }>;
     };
   }
 }
@@ -319,6 +320,16 @@ export default function KhalafTV() {
           void openRemoteProvider(next.url);
         } else {
           void closeRemoteProvider();
+        }
+        // Keep the provider tab/window available for playback, but return the
+        // visible browser/app to the main KHALAF TV screen after remote zapping.
+        if (window.khalafDesktop?.isDesktop) {
+          void window.khalafDesktop.focusMain();
+        } else {
+          try {
+            window.focus();
+            providerWindowRef.current?.blur();
+          } catch {}
         }
         return { ok: true, action };
       }

@@ -86,6 +86,16 @@ function createWindow() {
     } catch { return { ok: false, message: "Invalid application origin." }; }
     return closeProvider();
   });
+  ipcMain.handle("khalaf:focus-main", (event) => {
+    try {
+      if (new URL(event.senderFrame.url).origin !== allowedOrigin) return { ok: false, message: "Untrusted application origin." };
+    } catch { return { ok: false, message: "Invalid application origin." }; }
+    if (!mainWindow || mainWindow.isDestroyed()) return { ok: false, message: "Main window is unavailable." };
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    return { ok: true };
+  });
   mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {
     if (isAllowedProvider(target)) openProvider(target);
     else { try { if (new URL(target).protocol === "https:") shell.openExternal(target); } catch {} }
