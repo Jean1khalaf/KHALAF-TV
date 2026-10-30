@@ -8,6 +8,15 @@ import TVPairingPanel from "./TVPairingPanel";
 
 type Channel = { name: string; url: string; logo?: string; group?: string; country?: string };
 type Special = { name: string; url: string; note: string };
+declare global {
+  interface Window {
+    khalafDesktop?: {
+      isDesktop: true;
+      openProvider: (url: string) => Promise<{ ok: boolean; message?: string }>;
+      closeProvider: () => Promise<{ ok: boolean; message?: string }>;
+    };
+  }
+}
 
 const SPECIALS: Special[] = [
   { name: "Al Hadath", url: process.env.NEXT_PUBLIC_AL_HADATH_STREAM || process.env.NEXT_PUBLIC_AL_HADATH_EMBED || "https://www.elahmad.ru/tv/alarabiya_alhadath.php", note: "News · Live TV" },
@@ -200,6 +209,15 @@ export default function KhalafTV() {
         const specialKey = canonicalSpecial(requested.name);
         const next = specialKey ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested : requested;
         setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next); setFullScreenPlayer(true);
+        if (window.khalafDesktop?.isDesktop) {
+          if ("note" in next && !isDirectMedia(next.url)) {
+            void window.khalafDesktop.openProvider(next.url).then(result => {
+              if (!result.ok) console.warn("KHALAF TV provider window:", result.message);
+            }).catch(error => console.error("Could not open provider window:", error));
+          } else {
+            void window.khalafDesktop.closeProvider().catch(() => undefined);
+          }
+        }
         return { ok: true, action };
       }
       case "play":
@@ -237,7 +255,13 @@ export default function KhalafTV() {
         return { ok: true, action };
       }
       case "fullscreen": setFullScreenPlayer(v => !v); return { ok: true, action };
-      case "disconnect": return { ok: true, action };
+      case "close-provider":
+        if (!window.khalafDesktop?.isDesktop) return { ok: false, action, message: "La fermeture automatique du fournisseur est disponible dans l'application Windows KHALAF TV." };
+        void window.khalafDesktop.closeProvider();
+        return { ok: true, action };
+      case "disconnect":
+        if (window.khalafDesktop?.isDesktop) void window.khalafDesktop.closeProvider();
+        return { ok: true, action };
       default: return { ok: false, action, message: "Commande inconnue." };
     }
   }, []);
