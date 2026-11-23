@@ -202,3 +202,8 @@ Note: the source ZIP does not include a prebuilt Windows `.exe`. The first autom
 ## Phone-to-TV Remote (Ably)
 
 See [PAIRING-SETUP.md](./PAIRING-SETUP.md) for setup, required environment variables, database migration, and pairing instructions.
+
+### Embedded provider channels (Al Hadath / Lebanon)
+
+Al Hadath, MTV Lebanon, LBC Lebanon, and Al Jadeed use their elahmad.ru channel pages in an in-app iframe in the KHALAF TV player area. Selecting one of these channels does not intentionally open a provider tab or external browser window. The provider must permit framing for playback to appear; if elahmad.ru sends `X-Frame-Options` or a restrictive `Content-Security-Policy` `frame-ancestors` header, the browser will block the iframe and KHALAF TV cannot override that restriction.
+

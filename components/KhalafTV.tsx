@@ -10,10 +10,10 @@ type Channel = { name: string; url: string; logo?: string; group?: string; count
 type Special = { name: string; url: string; note: string };
 
 const SPECIALS: Special[] = [
-  { name: "Al Hadath", url: process.env.NEXT_PUBLIC_AL_HADATH_STREAM || process.env.NEXT_PUBLIC_AL_HADATH_EMBED || "https://www.elahmad.ru/tv/alarabiya_alhadath.php", note: "News · Live TV" },
-  { name: "MTV Lebanon", url: process.env.NEXT_PUBLIC_MTV_LEBANON_STREAM || process.env.NEXT_PUBLIC_MTV_LEBANON_EMBED || "https://www.elahmad.ru/tv/mtvlebanon.htm", note: "Lebanese TV" },
-  { name: "LBC Lebanon", url: process.env.NEXT_PUBLIC_LBC_LEBANON_STREAM || process.env.NEXT_PUBLIC_LBC_LEBANON_EMBED || "https://www.elahmad.ru/tv/lbc.php", note: "Lebanese TV" },
-  { name: "Al Jadeed Lebanon", url: process.env.NEXT_PUBLIC_JADEED_LEBANON_STREAM || process.env.NEXT_PUBLIC_JADEED_LEBANON_EMBED || "https://www.elahmad.ru/tv/newtv.php", note: "Lebanese TV" },
+  { name: "Al Hadath", url: process.env.NEXT_PUBLIC_AL_HADATH_EMBED || "https://www.elahmad.ru/tv/alarabiya_alhadath.php", note: "News · Live TV" },
+  { name: "MTV Lebanon", url: process.env.NEXT_PUBLIC_MTV_LEBANON_EMBED || "https://www.elahmad.ru/tv/mtvlebanon.htm", note: "Lebanese TV" },
+  { name: "LBC Lebanon", url: process.env.NEXT_PUBLIC_LBC_LEBANON_EMBED || "https://www.elahmad.ru/tv/lbc.php", note: "Lebanese TV" },
+  { name: "Al Jadeed Lebanon", url: process.env.NEXT_PUBLIC_JADEED_LEBANON_EMBED || "https://www.elahmad.ru/tv/newtv.php", note: "Lebanese TV" },
 ];
 
 const isDirectMedia = (url: string) => /\.(m3u8|mp4|webm|mpd)(\?|#|$)/i.test(url);
@@ -309,24 +309,10 @@ export default function KhalafTV() {
     switch (action) {
       case "open-provider-tab": {
         const current = selectedRef.current;
-        // Remote channel selection can arrive as a plain Channel object (without
-        // the UI-only `note` field). Identify provider channels by their name too.
-        const isProviderChannel = !!current && (!!canonicalSpecial(current.name) || "note" in current);
-        if (!current || !isProviderChannel || isDirectMedia(current.url)) {
-          return { ok: false, action, message: "Select MTV Lebanon, LBC Lebanon, Al Jadeed, or Al Hadath first." };
+        if (!current || (!canonicalSpecial(current.name) && !("note" in current)) || isDirectMedia(current.url)) {
+          return { ok: false, action, message: "Select one of the four embedded Lebanese/news channels first." };
         }
-        if (window.khalafDesktop?.isDesktop) {
-          try {
-            const result = await window.khalafDesktop.openProvider(current.url);
-            return result.ok ? { ok: true, action, message: "Provider window opened." } : { ok: false, action, message: result.message || "Could not open provider window." };
-          } catch {
-            return { ok: false, action, message: "Could not open provider window. Please try again on the TV." };
-          }
-        }
-        const opened = await openRemoteProvider(current.url);
-        return opened
-          ? { ok: true, action, message: "Provider tab opened." }
-          : { ok: false, action, message: "On the TV, click Enable remote channel tab first and allow pop-ups, then try again." };
+        return { ok: true, action, message: "This channel is displayed inside KHALAF TV." };
       }
       case "select": {
         const requested = command.channel as Channel | undefined;
@@ -334,12 +320,10 @@ export default function KhalafTV() {
         const specialKey = canonicalSpecial(requested.name);
         const next = specialKey ? SPECIALS.find(item => canonicalSpecial(item.name) === specialKey) || requested : requested;
         setSelected(next); rememberChannel(next.name); setShowSpecialNotice("note" in next); setFullScreenPlayer(true);
-        if ("note" in next && !isDirectMedia(next.url)) {
-          void openRemoteProvider(next.url);
-        } else {
-          void closeRemoteProvider();
-          requestMainTabFocus();
-        }
+        // Provider-backed special channels now load in the in-app iframe.
+        // Never open elahmad.ru in a separate browser or desktop window.
+        void closeRemoteProvider();
+        requestMainTabFocus();
         return { ok: true, action };
       }
       case "close-provider": {
@@ -523,18 +507,7 @@ export default function KhalafTV() {
 
         <section className="main-content">
           <div className="welcome-row"><div><div className="eyebrow"><Radio size={14}/> {t.eyebrow}</div><h1>{t.titleA} <span>{t.titleB}</span></h1><p>{t.intro}</p>
-              <div className="provider-remote-tools">
-                <button type="button" className="primary-button" onClick={enableRemoteProviderTab}>
-                  Enable remote channel tab
-                </button>
-                <button type="button" className="secondary-button" onClick={() => { void openRemoteProvider(selectedUrl); }}>
-                  Open provider page
-                </button>
-                <button type="button" className="secondary-button" onClick={() => { void closeRemoteProvider(); }}>
-                  Close provider tab
-                </button>
-                {providerTabMessage && <small role="status">{providerTabMessage}</small>}
-              </div></div><div className="channel-count"><strong>{channels.length.toLocaleString()}</strong><span>{t.listed}</span></div></div>
+</div><div className="channel-count"><strong>{channels.length.toLocaleString()}</strong><span>{t.listed}</span></div></div>
           <div className={`player-card ${fullScreenPlayer ? "player-card-fullscreen" : ""}`}>
             <div className="player-topline"><span><i className="red-dot"/> NOW PLAYING</span><div className="player-topline-actions"><span className="quality-tag">LIVE</span>{fullScreenPlayer && <button className="fullscreen-close" onClick={() => setFullScreenPlayer(false)} aria-label="Exit full screen"><Minimize2 size={17}/> Exit full screen</button>}</div></div>
             {isSpecial && !isNativeSpecial ? (
@@ -543,38 +516,24 @@ export default function KhalafTV() {
                   <div className="special-glow"><Tv size={34}/></div>
                   <div className="special-heading-copy">
                     <div className="special-title">{selectedName}</div>
-                    <p>{t.sourceNote}</p>
+                    <p>KHALAF TV · Embedded from elahmad.ru</p>
                   </div>
-                  <a className="secondary-button" href={selectedUrl} target="_blank" rel="noopener"><ExternalLink size={15}/> {t.source}</a>
                 </div>
-                <div className="provider-fallback" role="status" aria-live="polite">
-                  <div className="provider-fallback-icon"><ExternalLink size={26}/></div>
-                  <h3>{t.blockedTitle}</h3>
-                  <p>{t.blockedHelp}</p>
-                  <div className="provider-fallback-actions">
-                    <button className="provider-open-button" type="button" onClick={enableRemoteProviderTab}>
-                      <ExternalLink size={16}/> Enable remote channel tab
-                    </button>
-                    <button className="provider-return-button" type="button" onClick={() => { void openRemoteProvider(selectedUrl); }}>
-                      <ExternalLink size={16}/> Open in remote tab
-                    </button>
-                    <button className="provider-return-button" type="button" onClick={() => { void closeRemoteProvider(); }}>
-                      <Tv size={16}/> Close provider tab
-                    </button>
-                    <a className="provider-open-button" href={selectedUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink size={16}/>{t.sourceFallback}
-                    </a>
-                    <button className="provider-return-button" onClick={() => {
-                      setFullScreenPlayer(false);
-                      setSelected(null);
-                      setShowSpecialNotice(false);
-                      setMobileMenu(false);
-                      window.setTimeout(() => document.getElementById("channels-directory")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
-                    }}>
-                      <Tv size={16}/>{t.returnToDirectory}
-                    </button>
-                  </div>
-                  <small>{t.returnHint}</small>
+                <div className="source-frame-wrap">
+                  <iframe
+                    key={`${selectedName}:${selectedUrl}`}
+                    className="source-frame"
+                    src={selectedUrl}
+                    title={`${selectedName} live stream`}
+                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                  <div className="source-watermark">KHALAF <b>TV</b></div>
+                </div>
+                <div className="special-player-bottom">
+                  <span><i className="red-dot"/> LIVE · {selectedName}</span>
+                  <span>PLAYING INSIDE KHALAF TV</span>
                 </div>
               </div>
             ) : (
